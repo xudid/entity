@@ -1,0 +1,22 @@
+{
+  "name": "xudid/entity",
+  "description": "persistence and request layer",
+  "minimum-stability": "stable",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Didier Moindreau",
+      "email": "dmoindreau@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Entity\\": "src/"
+    }
+  },
+  "require": {
+    "doctrine/dbal": "^2.10",
+    "doctrine/orm": "^2.7",
+    "ext-pdo": "*"
+  }
+}
