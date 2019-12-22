@@ -4,8 +4,8 @@
 namespace Ui\Model\Database;
 
 
-class DataSource
+interface DataSourceInterface
 {
-    private string $name;
-    private array $config;
+    public function getName(): string;
+    public function getConfig(): array;
 }
