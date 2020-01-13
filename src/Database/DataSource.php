@@ -1,11 +1,39 @@
 <?php
 
 
-namespace Ui\Model\Database;
+namespace Entity\Database;
 
 
-interface DataSourceInterface
+
+abstract class DataSource implements DataSourceInterface
 {
-    public function getName(): string;
-    public function getConfig(): array;
+    private  string $name = "";
+    private array $config = [];
+
+    /**
+     * DataSource constructor.
+     * @param string $name
+     * @param array $config
+     */
+    public function __construct(string $name, array $config)
+    {
+        $this->name = $name;
+        $this->config = $config;
+    }
+
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function getConfig(): array
+    {
+        return $this->config;
+    }
+
+    /**
+     * @return mixed
+     */
+    public abstract function getDriver() : DriverInterface;
 }

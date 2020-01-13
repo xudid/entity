@@ -3,11 +3,7 @@
 namespace Entity\Database;
 
 
-use Doctrine\DBAL\DBALException;
-use Doctrine\ORM\OptimisticLockException;
-use Doctrine\ORM\ORMException;
-use Doctrine\ORM\TransactionRequiredException;
-use Ui\Model\Database\DataSourceInterface;
+use Exception;
 
 /**
  * Class Dao
@@ -17,25 +13,26 @@ class Dao implements DaoInterface
 {
     /**
      * @var string $classNamespace
-     */
-    protected $classNamespace = "";
+     **/
+    protected string $classNamespace = "";
 
-    private $databaseConfig;
+    private DriverInterface $driver;
     /**
      * @var string
      */
-    private $entitiesDirectory;
+    private string $entitiesDirectory;
 
     /**
-     * [__construct description]
-     * @param DataSourceInterface $dataSource
-     * @param string $classnamespace [description]
+     * Dao constructor.
+     * @param DriverInterface $dataSource
+     * @param string $classnamespace
      * @param string $entitiesDirectory
      */
-    function __construct(DataSourceInterface $dataSource, string $classnamespace, $entitiesDirectory = '/entities/')
+    function __construct(DataSource $dataSource, string $classnamespace, $entitiesDirectory = '/entities/')
     {
         $this->classNamespace = $classnamespace;
-        $this->databaseConfig = $dataSource->getConfig();
+        $this->dataSource = $dataSource;
+        $this->driver = $dataSource->getDriver();
         $this->entitiesDirectory = $entitiesDirectory;
     }
 
@@ -43,57 +40,53 @@ class Dao implements DaoInterface
     {
 
         try {
-            $dbal = new DatabaseAbstractLayer($this->databaseConfig, $this->entitiesDirectory, true);
+            $dbal = new DatabaseAbstractLayer($this->driver, $this->entitiesDirectory, true);
             $entityManager = $dbal->getEntityManager();
             $entityManager->persist($object);
             $entityManager->flush();
             return $object;
-        } catch (DBALException $ex) {
+        } catch (Exception $ex) {
             return $ex->getPrevious()->getCode();
-        } catch (ORMException $e) {
-            return $e->getPrevious()->getCode();
         }
     }
 
     public function update($object)
     {
         try {
-            $dbal = new DatabaseAbstractLayer($this->databaseConfig, $this->entitiesDirectory, true);
+            $dbal = new DatabaseAbstractLayer($this->driver, $this->entitiesDirectory, true);
             $entityManager = $dbal->getEntityManager();
             $entityManager->merge($object);
             $entityManager->flush();
             return $object;
-        } catch (DBALException $ex) {
+        } catch (Exception $ex) {
             return $ex->getPrevious()->getCode();
-        } catch (ORMException $e) {
         }
     }
 
     public function delete(int $id)
     {
         try {
-            $dbal = new DatabaseAbstractLayer($this->databaseConfig, $this->entitiesDirectory);
+            $dbal = new DatabaseAbstractLayer($this->driver, $this->entitiesDirectory);
             $entityManager = $dbal->getEntityManager();
             $repository = $entityManager->getRepository($this->classNamespace);
             $object = $repository->find($id);
             $entityManager->remove($object);
             $entityManager->flush();
             return $object;
-        } catch (DBALException $ex) {
+        } catch (Exception $ex) {
             return $ex->getPrevious()->getCode();
-        } catch (ORMException $e) {
         }
     }
 
     public function findAll()
     {
         try {
-            $dbal = new DatabaseAbstractLayer($this->databaseConfig, $this->entitiesDirectory);
+            $dbal = new DatabaseAbstractLayer($this->driver, $this->entitiesDirectory);
             $entityManager = $dbal->getEntityManager();
             $result = ($entityManager->getRepository($this->classNamespace))->findAll();
             return $result;
-        } catch (DBALException $ex) {
-            return $ex->getPrevious()->getCode();
+        } catch (Exception $ex) {
+            return $ex->getMessage();
         }
 
     }
@@ -101,27 +94,21 @@ class Dao implements DaoInterface
     public function findById(int $id)
     {
         try {
-            $dbal = new DatabaseAbstractLayer($this->databaseConfig, $this->entitiesDirectory);
+            $dbal = new DatabaseAbstractLayer($this->driver, $this->entitiesDirectory);
             $entityManager = $dbal->getEntityManager();
             return $entityManager->find($this->classNamespace, $id);
-        } catch (DBALException $ex) {
-            return $ex->getPrevious()->getCode();
-        } catch (OptimisticLockException $e) {
-            return $e->getPrevious()->getCode();
-        } catch (TransactionRequiredException $e) {
-            return $e->getPrevious()->getCode();
-        } catch (ORMException $e) {
-            return $e->getPrevious()->getCode();
+        } catch (Exception $ex) {
+            return $ex->getMessage();
         }
     }
 
     public function findBy(array $params)
     {
         try {
-            $dbal = new DatabaseAbstractLayer($this->databaseConfig, $this->entitiesDirectory);
+            $dbal = new DatabaseAbstractLayer($this->driver, $this->entitiesDirectory);
             $entityManager = $dbal->getEntityManager();
             return $entityManager->getRepository($this->classNamespace)->findBy($params);
-        } catch (DBALException $ex) {
+        } catch (Exception $ex) {
             return $ex->getPrevious()->getCode();
         }
     }
