@@ -14,9 +14,7 @@ class Field
     private string $name;
 
     /**
-     * @var FieldType $type
-     *
-     * @ManyToOne(target="FieldType")
+     * @var mixed $type
      */
     private $type;
 
@@ -48,7 +46,6 @@ class Field
 
     /**
      * @var string $docComment
-     * @ManyToMany(targetEntity="Comment")
      */
     private string $docComment="";
 
@@ -98,7 +95,7 @@ class Field
     }
 
     /**
-     * @return
+     * @return bool
      */
     public function isWritable()
     {
@@ -130,7 +127,9 @@ class Field
 
     public function getShortType()
 	{
-		return end(explode('\\', $this->type));
+	    $className = $this->type;
+	    $parts = explode('\\', $className);
+		return end($parts);
 	}
 
     /**

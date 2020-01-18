@@ -30,7 +30,13 @@ class EntityFactory
 		$this->daoInterface = $daoInterface;
 	}
 
-	public function getEntity(string $className) {
+    /**
+     * @param string $className
+     * @return object
+     * @throws Exception
+     */
+	public function getEntity(string $className)
+    {
 		$this->entityClassname = DefaultResolver::getEntityClassName($className);
 		try {
 			$r = new ReflectionClass($this->entityClassname);

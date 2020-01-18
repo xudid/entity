@@ -21,16 +21,20 @@ class Dao implements DaoInterface
      * @var string
      */
     private string $entitiesDirectory;
+    /**
+     * @var DataSource
+     */
+    private DataSource $dataSource;
 
     /**
      * Dao constructor.
-     * @param DriverInterface $dataSource
-     * @param string $classnamespace
+     * @param DataSource $dataSource
+     * @param string $classNamespace
      * @param string $entitiesDirectory
      */
-    function __construct(DataSource $dataSource, string $classnamespace, $entitiesDirectory = '/entities/')
+    function __construct(DataSource $dataSource, string $classNamespace, $entitiesDirectory = '/entities/')
     {
-        $this->classNamespace = $classnamespace;
+        $this->classNamespace = $classNamespace;
         $this->dataSource = $dataSource;
         $this->driver = $dataSource->getDriver();
         $this->entitiesDirectory = $entitiesDirectory;
@@ -83,8 +87,7 @@ class Dao implements DaoInterface
         try {
             $dbal = new DatabaseAbstractLayer($this->driver, $this->entitiesDirectory);
             $entityManager = $dbal->getEntityManager();
-            $result = ($entityManager->getRepository($this->classNamespace))->findAll();
-            return $result;
+            return ($entityManager->getRepository($this->classNamespace))->findAll();
         } catch (Exception $ex) {
             return $ex->getMessage();
         }
@@ -102,6 +105,11 @@ class Dao implements DaoInterface
         }
     }
 
+    /**
+     * @param array $params
+     * @return array|object[]
+     * @throws Exception
+     */
     public function findBy(array $params)
     {
         try {
@@ -109,7 +117,7 @@ class Dao implements DaoInterface
             $entityManager = $dbal->getEntityManager();
             return $entityManager->getRepository($this->classNamespace)->findBy($params);
         } catch (Exception $ex) {
-            return $ex->getPrevious()->getCode();
+            throw $ex;
         }
     }
 }
