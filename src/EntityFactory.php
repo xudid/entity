@@ -42,7 +42,7 @@ class EntityFactory
 			$r = new ReflectionClass($this->entityClassname);
 			return $r->newInstanceArgs([$this->daoInterface]);
 		} catch (ReflectionException $e) {
-			throw new Exception($e->getMessage(),$this->entityClassname);
+			throw new Exception($e->getMessage());
 		}
 	}
 }
