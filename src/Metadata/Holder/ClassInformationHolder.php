@@ -3,7 +3,6 @@
 namespace Entity\Metadata\Holder;
 
 use Exception;
-use phpDocumentor\Reflection\Types\Object_;
 use Entity\Metadata\Field;
 
 /**
@@ -32,11 +31,9 @@ class ClassInformationHolder implements InformationHolderInterface
     protected  string $className;
 
     /**
-     * @var array $fieldnames
+     * @var array $fields
      */
-    private $fieldnames;
-
-    private $fields = [];
+    private array $fields = [];
 
     /**
      * ClassInformationHolder constructor.
@@ -84,8 +81,7 @@ class ClassInformationHolder implements InformationHolderInterface
     protected function findFields(): array
     {
         $filednames = [];
-        if ($this->className != "Doctrine\ORM\PersistentCollection") {
-
+        //if ($this->className != "Doctrine\ORM\PersistentCollection") {
             foreach ($this->reflectionClass->getMethods() as $method) {
                 $methodName = $method->getName();
                 $matched = preg_match("#^get[\w]+|is[\w]+|has[\w]+#", $methodName, $matches);
@@ -120,7 +116,7 @@ class ClassInformationHolder implements InformationHolderInterface
                 }
             }
             return $filednames;
-        }
+        //}
     }
 
     public function getClassName()
