@@ -1,49 +1,25 @@
 <?php
 namespace Entity\Database;
 
+use Entity\Database\QueryBuilder\Request;
+
 /**
  *
  */
 interface DaoInterface
 {
-  /**
-   * [save description]
-   * @return [type] [description]
-   */
-  public function save($object);
 
-  /**
-   * [update description]
-   * @return [type] [description]
-   */
-  public function update($object);
+    /**
+     * @return string
+     */
+    public function getClassNamespace(): string;
 
-  /**
-   * [delete description]
-   * @param  int    $id [description]
-   * @return [type]     [description]
-   */
-  public function delete(int $id);
 
-  /**
-   * [findAll description]
-   * @return [type] [description]
-   */
-  public function findAll();
-
-  /**
-   * [findById description]
-   * @param  int    $id [description]
-   * @return [type]     [description]
-   */
-  public function findById(int $id);
-
-  /**
-   * [findBy description]
-   * @param array $params
-   * @return [type] [description]
-   */
-  public function findBy(array $params);
+    /**
+     * @param Request $request
+     * @return mixed
+     */
+    public function execute(Request $request);
 
 }
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <phpunit colors="true" bootstrap="vendor/autoload.php">
+  <filter>
+  <whitelist processUncoveredFilesFromWhitelist="true">
+    <directory suffix=".php">src</directory>
+  </whitelist>
+</filter>
+    <testsuite name="entity test">
+      <directory>
+      	tests
+      </directory>
+     </testsuite>
+
+  </phpunit>

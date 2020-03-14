@@ -19,6 +19,7 @@ class ClassInformationHolder implements InformationHolderInterface
     protected $reflectionClass;
     protected $hasAssociation;
     protected $associations = [];
+    protected string $table = '';
     /**
      * @var array
      */
@@ -45,6 +46,7 @@ class ClassInformationHolder implements InformationHolderInterface
     {
         $this->reflectionClass = new \ReflectionClass($className);
         $this->setClassName($className);
+        $this->findTable();
 
         $this->findFields();
         $this->hasAssociation = false;
@@ -73,6 +75,13 @@ class ClassInformationHolder implements InformationHolderInterface
             $this->entity = $className;
         }
 
+    }
+
+    private function findTable()
+    {
+        $comment = $this->reflectionClass->getDocComment();
+        preg_match('#@Table\(name="([\w_]*)"#',$comment,$matches);
+        $this->table = $matches[1];
     }
 
     /**
@@ -212,6 +221,11 @@ class ClassInformationHolder implements InformationHolderInterface
     public function getShortClassName()
     {
         return $this->shortClassName;
+    }
+
+    public function getTable()
+    {
+        return $this->table;
     }
 
     /**

@@ -23,6 +23,12 @@
   "require": {
     "doctrine/dbal": "^2.10",
     "doctrine/orm": "^2.7",
-    "ext-pdo": "*"
+    "ext-pdo": "*",
+    "mongodb/mongodb": "^1.6",
+    "ext-mongodb": "*"
+  },
+  "require-dev": {
+    "symfony/var-dumper": "^5.0",
+    "phpunit/phpunit": "^8.0"
   }
 }
