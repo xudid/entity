@@ -5,12 +5,12 @@ namespace Entity\Model;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
-use Entity\Database\QueryBuilder;
 use Entity\Metadata\AnnotationParser;
 use Entity\Metadata\Association;
 use Entity\Metadata\DataColumn;
 use Entity\Metadata\ManyAssociation;
 use ReflectionClass;
+use ReflectionMethod;
 
 /**
  * Class Model
@@ -68,19 +68,19 @@ class Model
         $properties = (new ReflectionClass(self::getClass()))->getProperties();
         foreach ($properties as $property) {
             $columnName = $property->getName();
-           $columnComment  = $property->getDocComment();
-           preg_match('#@Column\(type="([\w_]*)"\)#', $columnComment, $matches);
-           if($matches) {
-               $columns[$columnName] = new DataColumn($columnName, $matches[1]);
-           }
+            $columnComment  = $property->getDocComment();
+            preg_match('#@Column\(type="([\w_]*)"\)#', $columnComment, $matches);
+            if($matches) {
+                $columns[$columnName] = new DataColumn($columnName, $matches[1]);
+            }
             preg_match('#@Id#', $columnComment, $matches);
             if($matches) {
                 $columns[$columnName]->setIsPrimary();
             }
-           preg_match('#@GeneratedValue#', $columnComment, $matches);
-           if($matches) {
-               $columns[$columnName]->setIsAutoIncrement();
-           }
+            preg_match('#@GeneratedValue#', $columnComment, $matches);
+            if($matches) {
+                $columns[$columnName]->setIsAutoIncrement();
+            }
         }
         return $columns;
 
@@ -109,9 +109,17 @@ class Model
         foreach ($properties as $property) {
             $columnName = $property->getName();
             $columnComment  = $property->getDocComment();
+            $attributeString = '';
+            $associationType = '';
+            foreach (Association::$AssociationTypes as $type ) {
+                $attributeString = AnnotationParser::extractAttributeString($type, $columnComment);
+               if (strlen($attributeString)) {
+                   $associationType = $type;
+                   break;
+               }
+            }
 
-            foreach (Association::$AssociationTypes as $associationType ) {
-                $attributeString = AnnotationParser::extractAttributeString($associationType, $columnComment);
+            if (strlen($attributeString)) {
                 $attributes = AnnotationParser::parseAttributes($attributeString);
                 if($attributes) {
                     if($associationType == 'ManyToMany' || $associationType == 'OneToMany') {
@@ -125,9 +133,14 @@ class Model
                         }
                         $associations[$columnName] = $association->setHoldingClassName(static::class);
                         if ($association instanceof ManyAssociation && $association->getOutClassName()) {
+
                             $outClassName = $association->getOutClassName();
-                            $outClass = new $outClassName();
-                            $association->setTableName(self::getTableName() . '_' . $outClass->getTableName());
+                            try {
+                                $outClassRelfection = new ReflectionClass($outClassName);
+                                $outClass = $outClassRelfection->newInstance([]);
+                                $association->setTableName(self::getTableName() . '_' . $outClass->getTableName());
+                            } catch (\Exception $exception) {
+                            }
                         }
                     }
                 }
@@ -138,18 +151,30 @@ class Model
 
     public function getPropertyValue(string $propertyName)
     {
+        $this->isProxy();
         $method = 'get' . ucfirst($propertyName);
         $class = self::getClass();
         try {
             $reflectionClass = new ReflectionClass($class);
             if($reflectionClass->hasMethod($method)) {
-                return $this->$propertyName;
+                if ($this->isProxy()) {
+                    return $this->$propertyName;
+                } else {
+                    return $this->$method();
+                }
+
             }
         } catch (\ReflectionException $e) {
             dump($e);
         }
 
     }
+    public function isProxy()
+    {
+        $reflectionClass = new ReflectionClass($this);
+        return $reflectionClass->hasProperty('wrapped');
+    }
+
 
     public static function getGetters()
     {
@@ -197,7 +222,6 @@ class Model
      */
     public function getId(): int
     {
-        dump('model id');
         return $this->id;
     }
 
@@ -208,5 +232,4 @@ class Model
     {
         $this->id = $id;
     }
-
 }
