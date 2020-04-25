@@ -4,6 +4,7 @@
 namespace Entity\Model;
 
 
+use Doctrine\Common\Inflector\Inflector;
 use Entity\Database\DaoInterface;
 use Entity\Database\QueryBuilder\DeleteRequest;
 use Entity\Database\QueryBuilder\InsertRequest;
@@ -27,14 +28,20 @@ class ModelManager
     {
         $this->dao = $dao;
     }
+    
+    public function enableDebug()
+    {
+        $this->dao->enableDebug();
+    }
 
     public function findById($id)
     {
         $request = self::makeFindById($this->dao->getClassNamespace(), $id);
         $result = $this->dao->execute($request);
         if ($result) {
-            $proxy = new ProxyFactory();
-            return $proxy->createProxy($result[0]);
+            /*$proxy = new ProxyFactory();
+            return $proxy->createProxy($result[0]);*/
+            return $result[0];
         } else {
            return false;
         }
@@ -43,19 +50,19 @@ class ModelManager
     public function findBy(array $params)
     {
         $request = self::makeFindBy($this->dao->getClassNamespace(), $params);
-        $this->dao->execute($request);
+        return $this->dao->execute($request);
     }
 
     public function findAll()
     {
         $request = self::makeSelectAll($this->dao->getClassNamespace());
-        $this->dao->execute($request);
         $return = [];
         $proxy = new ProxyFactory();
-        foreach ($this->dao->execute($request) as $result) {
-            $return[] = $proxy->createProxy($result);
+        $results = $this->dao->execute($request);
+        foreach ($results as $result) {
+          //  $return[] = $proxy->createProxy($result);
+            $return[] = $result;
         }
-
         return $return;
     }
 
@@ -65,12 +72,20 @@ class ModelManager
         $associationTable = $associationModel::getTableName();
         $association = $model::getAssociation($associationClassname);
         $table = $model::getTableName();
+        // this is the manytomany or onetomany with junction table
+        //Todo implements oneToMany ManyToOne OneToOne relations
         $junctionTable = $association[$associationTable]->getTableName();
         $request = (new SelectRequest($associationTable . '.*'))
             ->from($associationTable)
             ->join($junctionTable,'id',$associationTable. '_id')
             ->where($table . '_id','=',$model->getId());
-        return $this->dao->execute($request);
+        $results = $this->dao->execute($request, $associationClassname);
+        $proxyFactory = new ProxyFactory();
+        $returns = [];
+        foreach ($results as $result) {
+            $returns[] = $proxyFactory->createProxy($result);
+        }
+        return $results;
     }
 
     public function insert($object)
@@ -107,6 +122,7 @@ class ModelManager
         $columns = $object::getColumns();
         $request = new InsertRequest($object::getTableName());
         $fields = array_keys($columns);
+
         //Todo verify if id column is auto_increment
         //Todo if it is remove it , else use it
         $fields = array_filter($fields, function($key){
@@ -114,12 +130,11 @@ class ModelManager
                 return $key;
             }
         });
-
         $values = [];
         foreach ($columns as $column) {
             $name = $column->getName();
             if ($name !='id') {
-                $method = 'get' . $name;
+                $method = Inflector::camelize('get' . ucfirst($name));
                 $value = $object->$method();
                 $values[$name] = $value;
             }
