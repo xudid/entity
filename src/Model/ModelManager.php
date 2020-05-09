@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Entity\Model;
-
 
 use Doctrine\Common\Inflector\Inflector;
 use Entity\Database\DaoInterface;
@@ -72,19 +70,18 @@ class ModelManager
         $associationTable = $associationModel::getTableName();
         $association = $model::getAssociation($associationClassname);
         $table = $model::getTableName();
+
         // this is the manytomany or onetomany with junction table
         //Todo implements oneToMany ManyToOne OneToOne relations
+
         $junctionTable = $association[$associationTable]->getTableName();
         $request = (new SelectRequest($associationTable . '.*'))
             ->from($associationTable)
             ->join($junctionTable,'id',$associationTable. '_id')
             ->where($table . '_id','=',$model->getId());
         $results = $this->dao->execute($request, $associationClassname);
-        $proxyFactory = new ProxyFactory();
         $returns = [];
-        foreach ($results as $result) {
-            $returns[] = $proxyFactory->createProxy($result);
-        }
+        return $returns = $results ? $results : [];
         return $results;
     }
 
