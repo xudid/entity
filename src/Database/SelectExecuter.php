@@ -9,7 +9,12 @@ class SelectExecuter extends Executer
     {
         parent::execute();
         if ($this->statmentResult) {
-            return $this->statment->fetchAll(PDO::FETCH_CLASS, $this->className);
+            try {
+                return $this->statment->fetchAll(PDO::FETCH_CLASS, $this->className);
+            } catch (\Exception $exception) {
+                dump($exception);
+            }
+
         }
         return false;
     }
