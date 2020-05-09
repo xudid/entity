@@ -9,8 +9,8 @@ use Entity\Metadata\AnnotationParser;
 use Entity\Metadata\Association;
 use Entity\Metadata\DataColumn;
 use Entity\Metadata\ManyAssociation;
+use Entity\Traits\Hydratation;
 use ReflectionClass;
-use ReflectionMethod;
 
 /**
  * Class Model
@@ -18,6 +18,7 @@ use ReflectionMethod;
  */
 class Model
 {
+    use Hydratation;
     /**
      * @var int $id
      * @Id
@@ -118,7 +119,6 @@ class Model
                    break;
                }
             }
-
             if (strlen($attributeString)) {
                 $attributes = AnnotationParser::parseAttributes($attributeString);
                 if($attributes) {
@@ -138,7 +138,7 @@ class Model
                             try {
                                 $outClassRelfection = new ReflectionClass($outClassName);
                                 $outClass = $outClassRelfection->newInstance([]);
-                                $association->setTableName(self::getTableName() . '_' . $outClass->getTableName());
+                                $association->setTableName(self::getTableName() . '_' . $outClass::getTableName());
                             } catch (\Exception $exception) {
                             }
                         }
@@ -200,21 +200,7 @@ class Model
 
     public function __construct(array $datas)
     {
-        $this->hydrate($datas);
-    }
 
-    public function hydrate(array $datas)
-    {
-        $methods = get_class_methods(__CLASS__);
-        $keys = array_keys($datas);
-        foreach ($keys as $key) {
-            $key = strtolower($key);
-            $setter = 'set'.ucfirst($key);
-            $value = $datas[$key];
-            if (in_array($key, $methods)) {
-                $this->$setter($value);
-            }
-        }
     }
 
     /**
