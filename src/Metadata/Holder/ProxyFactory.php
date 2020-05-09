@@ -16,9 +16,9 @@ class ProxyFactory
         $objectShortClassName = $r->getShortName();
         $shortClassName = $objectShortClassName . 'Proxy';
         $className = $r->getName() . 'Proxy';
+        $fileClassName = str_replace('\\', DIRECTORY_SEPARATOR, $className);
          $this->root = dirname($_SERVER['DOCUMENT_ROOT']);
-        $fileName = $this->root . DIRECTORY_SEPARATOR .  'classes' . DIRECTORY_SEPARATOR . $className . '.php';
-
+        $fileName = $this->root . DIRECTORY_SEPARATOR .  'classes' . DIRECTORY_SEPARATOR . $fileClassName . '.php';
         if (!file_exists($fileName)) {
            $this->generateProxyCLassFile($namespace,$objectShortClassName, $shortClassName, $fileName);
         }
@@ -26,12 +26,6 @@ class ProxyFactory
         try {
             $r = new ReflectionClass($className);
             $proxy =  $r->newInstance($object);
-            /*$columns = array_keys($object::getColumns());
-            foreach ($columns as $column) {
-                $setter = 'set' . ucfirst($column);
-                $getter = 'get' . ucfirst($column);
-                $proxy->$setter($object->$getter());
-            }*/
             return $proxy;
         } catch (\Exception $exception)
         {
@@ -46,9 +40,10 @@ class ProxyFactory
                 class $shortClassName extends $objectShortClassName{" .'
                  
                     private  $wrapped;
-                    public function __construct(...$object)
+                    public function __construct($object)
                     {
                         $this->wrapped = $object;
+                        unset($this->id);
                     }
                     
                    
@@ -60,7 +55,7 @@ class ProxyFactory
                     
                     public static function __callStatic($name, $args)
                     {
-                        return $this->wrapped::$name($args);
+                        return self::$wrapped->$name($args);
                     }
                     
                     public function __get($name)
@@ -69,12 +64,18 @@ class ProxyFactory
                         return $this->wrapped->$method();
                     }
                     
+                    public function __set($name, $value)
+                    {
+                        $method = "set" . ucfirst($name);
+                        $this->wrapped->$method($value);
+                        return $this;
+                    }
                 }';
         $this->file_force_contents($filename ,$code);
     }
 
     private function file_force_contents($dir, $contents){
-        $parts = explode('\\', $dir);
+        $parts = explode(DIRECTORY_SEPARATOR, $dir);
         $file = array_pop($parts);
         $dir = '';
         $start = 0;
