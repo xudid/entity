@@ -19,7 +19,9 @@ interface DaoInterface
      * @param Request $request
      * @return mixed
      */
-    public function execute(Request $request);
+    public function execute(Request $request, string $className );
+
+    public function enableDebug();
 
 }
 
