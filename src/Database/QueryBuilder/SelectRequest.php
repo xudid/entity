@@ -59,12 +59,13 @@ class SelectRequest extends Request
     {
         $return = '';
         if (count($this->where) > 0){
+            $argument2 = str_replace('.', '_', $this->where[0]['argument1']);
             $return = self::$conditionVerb .
                 ' ' .
                 $this->where[0]['argument1'] .
                 ' '.
                 $this->where[0]['operator'] .
-                ' :'.$this->where[0]['argument1'] .
+                ' :'. $argument2 .
                 ' '
             ;
 
@@ -75,10 +76,10 @@ class SelectRequest extends Request
                     ' '.
                     $this->where[$i]['operator'] .
                     ' :'.$this->where[$i]['argument1'];
-                //echo $i;
-                if ($i < (count($this->where)-3)) {
                     $return .= ' ';
-                }
+                /*if ($i < (count($this->where)-3)) {
+                    $return .= ' ';
+                }*/
             }
         }
         return $return;
@@ -145,6 +146,7 @@ class SelectRequest extends Request
                 'relation' => $relation
         ];
         }
+        $argument1 = str_replace('.', '_', $argument1);
         $this->binded[$argument1] = $argument2;
         return  $this;
     }

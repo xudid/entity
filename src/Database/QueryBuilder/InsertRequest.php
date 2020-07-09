@@ -29,6 +29,7 @@ class InsertRequest extends Request
     public function __construct(string $table)
     {
         $this->table = $table;
+        $this->TYPE = InsertRequest::TYPE;
     }
 
     public function values(array $values)
