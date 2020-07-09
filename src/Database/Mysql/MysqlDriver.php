@@ -1,6 +1,7 @@
 <?php
 
 namespace Entity\Database\Mysql;
+
 use Entity\Database\DataSourceInterface;
 use Entity\Database\DriverInterface;
 use PDO;
@@ -37,7 +38,7 @@ class MysqlDriver extends PDO implements DriverInterface {
 
 		} catch (PDOException $e) {
         // todo : return an error message  and log the error
-			echo $e->getMessage();
+            echo $e->getMessage();
 		}
 	}
 
