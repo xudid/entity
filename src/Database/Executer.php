@@ -1,23 +1,43 @@
 <?php
 
-
 namespace Entity\Database;
 
-
+use Doctrine\Common\Inflector\Inflector;
 use Entity\Database\QueryBuilder\Request;
-use PDOStatement;
+use Exception;
+use \PDOStatement;
 
+/**
+ * Class Executer
+ * @package Entity\Database
+ */
 class Executer implements ExecuterInterface {
     /**
-     * @var DriverInterface
+     * @var DriverInterface $driver
      */
     protected DriverInterface $driver;
+
+    /**
+     * @var string $className
+     */
     protected string $className;
+
+    /**
+     * @var PDOStatement $statment
+     */
     protected PDOStatement $statment;
+
+    /**
+     * @var Request $request
+     */
     protected Request $request;
+
+    /**
+     * @var bool $debug
+     */
     protected bool $debug = false;
     /**
-     * @var bool
+     * @var bool $statmentResult
      */
     protected $statmentResult = false;
 
@@ -63,7 +83,7 @@ class Executer implements ExecuterInterface {
     {
         $this->statment = $this->driver->prepare($this->request->query());
         foreach ($this->request->getBinded() as $field => $value) {
-            $this->statment->bindValue(':' . $field, $value);
+            $this->statment->bindValue(':' . Inflector::tableize($field), $value);
         }
         if ($this->debug) {
             $this->statment->debugDumpParams();
@@ -73,7 +93,7 @@ class Executer implements ExecuterInterface {
             if ($this->debug) {
                 $this->statment->debugDumpParams();
             }
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             dump($ex->getMessage()   . __FILE__);
         }
     }
