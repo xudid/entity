@@ -2,9 +2,6 @@
 
 namespace Entity\Database;
 
-use Doctrine\ORM\EntityManager as EntityManager;
-use Doctrine\ORM\EntityRepository;
-use Entity\Database\QueryBuilder\DeleteRequest;
 use Entity\Database\QueryBuilder\Request;
 use Entity\DeleteExecuter;
 use Entity\UpdateExecuter;
@@ -18,44 +15,39 @@ use Exception;
 class Dao implements DaoInterface
 {
     /**
-     * @var string $classNamespace
-     **/
-    protected string $classNamespace = "";
-
+     * @var DriverInterface|mixed
+     */
     private DriverInterface $driver;
-    /**
-     * @var string
-     */
-    private string $entitiesDirectory;
-    /**
-     * @var DataSource
-     */
-    private DataSource $dataSource;
-    /**
-     * @var EntityManager|null
-     */
-    private ?EntityManager $entityManager;
-    /**
-     * @var EntityRepository
-     */
-    private ?EntityRepository $repository;
 
-    private $debug = false;
+    /**
+     * @var DataSourceInterface $dataSource
+     */
+    private DataSourceInterface $dataSource;
+
+    /**
+     * @var bool $debug
+     */
+    private bool $debug = false;
 
 
     /**
      * Dao constructor.
-     * @param DataSource $dataSource
-     * @param string $classNamespace
-     * @param string $entitiesDirectory
-     * @throws Exception
+     * @param DataSourceInterface $dataSource
      */
-    function __construct(DataSource $dataSource, string $classNamespace, $entitiesDirectory = '/entities/')
+    function __construct(DataSourceInterface $dataSource)
     {
-        $this->classNamespace = $classNamespace;
         $this->dataSource = $dataSource;
         $this->driver = $dataSource->getDriver();
-        $this->entitiesDirectory = $entitiesDirectory;
+    }
+
+    public function getDatasource()
+    {
+        return $this->dataSource;
+    }
+
+    public function getDriver()
+    {
+        return $this->driver;
     }
 
     public function enableDebug()
@@ -63,41 +55,22 @@ class Dao implements DaoInterface
         $this->debug = true;
     }
 
-    /**
-     * @param int $id
-     * @return object|string|null
-     */
-    public function delete(int $id)
+    public function beginTransation()
     {
-        try {
-            $className = $this->classNamespace;
-            $model = new $className([]);
-            $request = new DeleteRequest($model::getTableName());
-            $request->where('id', '=', $id);
-            $result =  $results = (new Executer($this->dataSource, $this->classNamespace,true))->execute($request);
-        } catch (Exception $ex) {
-            return $ex->getCode() . ' ' . __FILE__;
-        }
+        $this->driver->beginTransaction();
+        return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getClassNamespace(): string
-    {
-        return $this->classNamespace;
-    }
 
     /**
      * @param Request $request
+     * @param string $className
      * @return mixed
-     * @throws Exception
      */
-    public function execute(Request $request, string $associationClassName = '')
+    public function execute(Request $request, string $className = '')
     {
-
         try {
-            $executer = $this->getExecuter($request, strlen($associationClassName) > 0? $associationClassName :$this->classNamespace);
+            $executer = $this->getExecuter($request, $className);
             if ($this->debug) {
                 $executer->enableDebug();
             }
@@ -105,6 +78,7 @@ class Dao implements DaoInterface
         } catch (Exception $exception) {
             dump($exception);
         }
+        return false;
     }
 
     private function getExecuter(Request $request, string $associationClassName) : ExecuterInterface

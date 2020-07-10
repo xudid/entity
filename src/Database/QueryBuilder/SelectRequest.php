@@ -16,12 +16,12 @@ class SelectRequest extends Request
     private static string $joinVerb = 'INNER JOIN %table2% ON %idTable1% = %idTable2%';
     private static string $distinctVerb = 'DISTINCT';
     private $selctetFields = [];
-    private $froms = [];
-    private $where = [];
-    private $joins = [];
-    private $binded = [];
+    private array $froms = [];
+    private array $where = [];
+    private array $joins = [];
+    private array $binded = [];
     /**
-     * @var bool
+     * @var bool $distinct
      */
     private bool $distinct = false;
 
@@ -77,9 +77,6 @@ class SelectRequest extends Request
                     $this->where[$i]['operator'] .
                     ' :'.$this->where[$i]['argument1'];
                     $return .= ' ';
-                /*if ($i < (count($this->where)-3)) {
-                    $return .= ' ';
-                }*/
             }
         }
         return $return;
@@ -109,7 +106,7 @@ class SelectRequest extends Request
 
     public function query() : string
     {
-        $return = self::$selectVerb .
+        return self::$selectVerb .
             ' ' .
             $this->stringifyDistinct() .
             $this->stringifySelectParams() .
@@ -120,7 +117,6 @@ class SelectRequest extends Request
             $this->stringifyWhere() .
             ' ' .
             ';';
-        return $return;
     }
 
     public function from(...$tables) : SelectRequest

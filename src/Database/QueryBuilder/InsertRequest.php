@@ -1,24 +1,36 @@
 <?php
 
-
 namespace Entity\Database\QueryBuilder;
 
-
+/**
+ * Class InsertRequest
+ * @package Entity\Database\QueryBuilder
+ */
 class InsertRequest extends Request
 {
     const TYPE = 'INSERT';
-    private static $valuesVerb = 'VALUES';
     /**
-     * @var string
+     * @var string $valuesVerb
+     */
+    private static string $valuesVerb = 'VALUES';
+
+    /**
+     * @var string $table
      */
     private string $table;
-    private array $values = [];
+
     /**
-     * @var array
+     * @var array $values
+     */
+    private array $values = [];
+
+    /**
+     * @var array $columns
      */
     private array $columns = [];
+
     /**
-     * @var array
+     * @var array $binded
      */
     private array $binded = [];
 
@@ -32,6 +44,10 @@ class InsertRequest extends Request
         $this->TYPE = InsertRequest::TYPE;
     }
 
+    /**
+     * @param array $values
+     * @return $this
+     */
     public function values(array $values)
     {
             foreach ($values as $key =>$value) {
@@ -40,6 +56,9 @@ class InsertRequest extends Request
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function query()
     {
         return 'INSERT INTO ' .
@@ -49,6 +68,9 @@ class InsertRequest extends Request
             $this->stringifyValues() ;
     }
 
+    /**
+     * @return string
+     */
     private function stringifyValues()
     {
         return self::$valuesVerb .
@@ -56,6 +78,10 @@ class InsertRequest extends Request
             ;
     }
 
+    /**
+     * @param mixed ...$columns
+     * @return $this
+     */
     public function columns(...$columns)
     {
         if (is_array($columns)) {
@@ -80,10 +106,9 @@ class InsertRequest extends Request
         return $this->binded;
     }
 
-
-
-
-
+    /**
+     * @return string
+     */
     private function stringifyColumns()
     {
         $result = '';
