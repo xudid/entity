@@ -2,15 +2,15 @@
 
 namespace Entity\Model;
 
-use Doctrine\ORM\Mapping\Column;
-use Doctrine\ORM\Mapping\GeneratedValue;
-use Doctrine\ORM\Mapping\Id;
+use Doctrine\Common\Inflector\Inflector;
 use Entity\Metadata\AnnotationParser;
 use Entity\Metadata\Association;
 use Entity\Metadata\DataColumn;
 use Entity\Metadata\ManyAssociation;
-use Entity\Traits\Hydratation;
+use Exception;
 use ReflectionClass;
+use ReflectionException;
+use TypeError;
 
 /**
  * Class Model
@@ -18,7 +18,8 @@ use ReflectionClass;
  */
 class Model
 {
-    use Hydratation;
+    //use Hydratation;
+
     /**
      * @var int $id
      * @Id
@@ -26,6 +27,10 @@ class Model
      * @GeneratedValue
      */
     protected int $id = 0;
+
+    /**
+     * @return false|string
+     */
     public static function getClass()
     {
         $class = get_class(new static([]));
@@ -37,49 +42,90 @@ class Model
 
     }
 
+    /**
+     * @return mixed|string
+     */
     public static function getShortClass()
     {
-        $s = str_replace('\\', '/', self::getClass([]));
+        $s = str_replace('\\', '/', self::getClass());
         $c = explode("/", $s);
         return end($c);
     }
-    public static function getTableName() : string
+
+    /**
+     * @return string
+     */
+    public static function getTableName(): string
     {
-        $class = self::getClass();
-        $comment = (new ReflectionClass($class))->getDocComment();
-        preg_match('#@Table\(name="([\w_]*)"#',$comment,$matches);
-        return $matches[1];
+
+        try {
+            $class = self::getClass();
+            $comment = (new ReflectionClass($class))->getDocComment();
+            preg_match('#@Table\(name="([\w_]*)"#', $comment, $matches);
+            return $matches[1];
+        } catch (ReflectionException $e) {
+            dump($e);
+        }
+       return '';
     }
 
-    public static function getPrimaryKeys() : array
+    /**
+     * @return array
+     */
+    public static function getPrimaryKeys(): array
     {
-        return array_filter(self::getColumns(), function(DataColumn $column){
+        return array_filter(self::getColumns(), function (DataColumn $column) {
             return $column->isPrimary();
         });
     }
 
-    public static function getForeignKeys() : array
+    /**
+     * @return array
+     */
+    public static function getForeignKeys(): array
     {
         return [];
     }
 
-    public static function getColumns() : array
+    /**
+     * @param string $name
+     * @return DataColumn|null
+     */
+    public static function getColumn(string $name) : ?DataColumn
+    {
+        $columns = self::getColumns();
+        $column = null;
+        foreach ($columns as $col) {
+            $column = $col->getName() == $name ?: null;
+            if ($col->getName() == $name) {
+                $column = $col;
+                break;
+            }
+        }
+        return $column;
+    }
+
+    /**
+     * @return array
+     * @throws ReflectionException
+     */
+    public static function getColumns(): array
     {
         $columns = [];
         $properties = (new ReflectionClass(self::getClass()))->getProperties();
         foreach ($properties as $property) {
             $columnName = $property->getName();
-            $columnComment  = $property->getDocComment();
+            $columnComment = $property->getDocComment();
             preg_match('#@Column\(type="([\w_]*)"\)#', $columnComment, $matches);
-            if($matches) {
+            if ($matches) {
                 $columns[$columnName] = new DataColumn($columnName, $matches[1]);
             }
             preg_match('#@Id#', $columnComment, $matches);
-            if($matches) {
+            if ($matches) {
                 $columns[$columnName]->setIsPrimary();
             }
             preg_match('#@GeneratedValue#', $columnComment, $matches);
-            if($matches) {
+            if ($matches) {
                 $columns[$columnName]->setIsAutoIncrement();
             }
         }
@@ -94,61 +140,74 @@ class Model
     public static function getAssociation(string $className)
     {
         $assocations = self::getAssociations();
-        $assocation = array_filter($assocations, function (Association $value) use($className){
+        ($assocations);
+        $association = null;
+        foreach ($assocations as $value) {
             if ($value->getOutClassName() == $className) {
-                return true;
+                $association = $value;
+                break;
             }
-        });
-        return $assocation ?: false;
+        }
+        return $association ?: false;
     }
 
+    /**
+     * @return array
+     * @throws Exception
+     */
     public static function getAssociations()
     {
         $associations = [];
         $class = self::getClass();
-        $properties = (new ReflectionClass($class))->getProperties();
-        foreach ($properties as $property) {
-            $columnName = $property->getName();
-            $columnComment  = $property->getDocComment();
-            $attributeString = '';
-            $associationType = '';
-            foreach (Association::$AssociationTypes as $type ) {
-                $attributeString = AnnotationParser::extractAttributeString($type, $columnComment);
-               if (strlen($attributeString)) {
-                   $associationType = $type;
-                   break;
-               }
-            }
-            if (strlen($attributeString)) {
-                $attributes = AnnotationParser::parseAttributes($attributeString);
-                if($attributes) {
-                    if($associationType == 'ManyToMany' || $associationType == 'OneToMany') {
-                        $association = new ManyAssociation($columnName, $associationType);
-                    } else {
-                        $association = new Association($columnName, $associationType);
-                    }
-                    if ($attributeString) {
-                        if (array_key_exists('targetEntity', $attributes)) {
-                            $association->setOutClassName($attributes['targetEntity']);
+        try {
+            $properties = (new ReflectionClass($class))->getProperties();
+            foreach ($properties as $property) {
+                $columnName = $property->getName();
+                $columnComment = $property->getDocComment();
+                $association = null;
+                foreach (Association::$AssociationTypes as $type) {
+                    $attributeString = AnnotationParser::extractAttributeString($type, $columnComment);
+                    if (strlen($attributeString)) {
+                        $associationType = $type;
+                        if ($associationType == 'ManyToMany') {
+                            $association = new ManyAssociation($columnName, $associationType);
+                        } else {
+                            $association = new Association($columnName, $associationType);
                         }
-                        $associations[$columnName] = $association->setHoldingClassName(static::class);
-                        if ($association instanceof ManyAssociation && $association->getOutClassName()) {
-
-                            $outClassName = $association->getOutClassName();
-                            try {
-                                $outClassRelfection = new ReflectionClass($outClassName);
-                                $outClass = $outClassRelfection->newInstance([]);
-                                $association->setTableName(self::getTableName() . '_' . $outClass::getTableName());
-                            } catch (\Exception $exception) {
-                            }
+                        $attributes = AnnotationParser::parseAttributes($attributeString);
+                        if ($attributes && array_key_exists('targetEntity', $attributes)) {
+                            $association->setOutClassName($attributes['targetEntity']);
+                            $association->setHoldingClassName(static::class);
+                        } else {
+                            dump('missing attributes', $attributeString, $attributes);
+                            throw new Exception("Missing or Invalid association for $columnName : " . $attributeString);
+                        }
+                        break;
+                    }
+                }
+                if ($association) {
+                    $associations[$columnName] = $association;
+                    if ($association instanceof ManyAssociation && $association->getOutClassName()) {
+                        $outClassName = $association->getOutClassName();
+                        try {
+                            $outClassRelfection = new ReflectionClass($outClassName);
+                            $outClass = $outClassRelfection->newInstance([]);
+                            $association->setTableName(self::getTableName() . '_' . $outClass::getTableName());
+                        } catch (\Exception $exception) {
+                            dump($exception);
                         }
                     }
                 }
             }
+            return $associations;
+        } catch (ReflectionException $e) {
         }
-        return $associations;
     }
 
+    /**
+     * @param string $propertyName
+     * @return |null
+     */
     public function getPropertyValue(string $propertyName)
     {
         $this->isProxy();
@@ -156,7 +215,7 @@ class Model
         $class = self::getClass();
         try {
             $reflectionClass = new ReflectionClass($class);
-            if($reflectionClass->hasMethod($method)) {
+            if ($reflectionClass->hasMethod($method)) {
                 if ($this->isProxy()) {
                     return $this->$propertyName;
                 } else {
@@ -164,43 +223,101 @@ class Model
                 }
 
             }
-        } catch (\ReflectionException $e) {
+        } catch (ReflectionException $e) {
             dump($e);
         }
-
+        return null;
     }
-    public function isProxy()
+
+    /**
+     * @return bool
+     */
+    public function isProxy() : bool
     {
-        $reflectionClass = new ReflectionClass($this);
-        return $reflectionClass->hasProperty('wrapped');
+        try {
+            $reflectionClass = new ReflectionClass($this);
+            return $reflectionClass->hasProperty('wrapped');
+        } catch (ReflectionException $e) {
+            dump($e);
+        }
+        return false;
     }
 
-
+    /**
+     * @return array
+     */
     public static function getGetters()
     {
-        $columns = self::getColumns();
-        $methods =[];
-        foreach ($columns as $column)
-        {
-            $method[] = 'get'  . ucfirst($column->getName());
-        }
+        $methods =  get_class_methods(static::class);
+        $methods = array_filter($methods, function($method){
+            if (substr($method, 0, 3) == 'get') {
+                return $method;
+            }
+        });
         return $methods;
     }
 
+    /**
+     * @return array
+     */
     public static function getSetters()
     {
-        $columns = self::getColumns();
-        $methods =[];
-        foreach ($columns as $column)
-        {
-            $method[] = 'set'  . ucfirst($column->getName());
-        }
+        $methods =  get_class_methods(static::class);
+        $methods = array_filter($methods, function($method){
+            if (substr($method, 0, 3) == 'set') {
+                return $method;
+            }
+        });
         return $methods;
     }
 
     public function __construct(array $datas)
     {
+        //return self::hydrate($datas);
+    }
 
+    public static function hydrate(array $datas)
+    {
+       $object = new static($datas);
+        $setters = $object::getSetters();
+        foreach ($datas as $key => $data) {
+            $setter = 'set' . Inflector::classify($key);
+            if (in_array($setter, $setters)) {
+                try {
+                    $object->$setter($data);
+                } catch (TypeError $error) {
+                    dump($error);
+                }
+            }
+        }
+        return $object;
+    }
+
+    /**
+     * @param string $className
+     * @return bool
+     */
+    public static function exists(string $className) : bool
+    {
+        if (class_exists($className) && Model::class == get_parent_class($className)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Magic setter to allow PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE
+     * to set table_ized column names
+     * @param $name
+     * @param $value
+     */
+    public function __set($name, $value)
+    {
+        $name = Inflector::classify($name);
+        $setter = 'set' . $name;
+        if (in_array($setter, get_class_methods($this))) {
+            $this->$setter($value);
+        }
     }
 
     /**
@@ -212,10 +329,13 @@ class Model
     }
 
     /**
-     * @param int $id
+     * @param $id
+     * @return $this
      */
-    public function setId(int $id): void
-    {
-        $this->id = $id;
+    public function setId($id) {
+        if (is_numeric($id)) {
+            $this->id = (int)$id;
+        }
+        return $this;
     }
 }
