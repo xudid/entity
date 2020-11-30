@@ -29,9 +29,11 @@ class SearchBinder
             foreach ($this->model::getColumns() as $column) {
                 $paramKey = $column->getName();
                 $fieldName = strtolower($this->model::getShortClass() . '_' . $paramKey);
-                $paramValue = $this->parsedBody[$fieldName];
-                if (strlen($paramValue)) {
-                    $bindedParams[$paramKey] = $paramValue;
+                if (in_array($fieldName, $this->parsedBody)) {
+                    $paramValue = $this->parsedBody[$fieldName];
+                    if (strlen($paramValue)) {
+                        $bindedParams[$paramKey] = $paramValue;
+                    }
                 }
             }
 
