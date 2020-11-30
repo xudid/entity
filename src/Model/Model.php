@@ -28,12 +28,19 @@ class Model
      */
     protected int $id = 0;
 
+    public static function model(string $model) : Model
+    {
+        if (self::exists($model)) {
+            return new $model();
+        }
+    }
+
     /**
      * @return false|string
      */
     public static function getClass()
     {
-        $class = get_class(new static([]));
+        $class = get_class(new static());
         if (strpos($class, 'Proxy')) {
             return get_parent_class(new static([]));
         } else {
@@ -118,6 +125,7 @@ class Model
             $columnComment = $property->getDocComment();
             preg_match('#@Column\(type="([\w_]*)"\)#', $columnComment, $matches);
             if ($matches) {
+               // dump($columnName, $matches[1]);
                 $columns[$columnName] = new DataColumn($columnName, $matches[1]);
             }
             preg_match('#@Id#', $columnComment, $matches);
@@ -140,15 +148,14 @@ class Model
     public static function getAssociation(string $className)
     {
         $assocations = self::getAssociations();
-        ($assocations);
-        $association = null;
+        $association = false;
         foreach ($assocations as $value) {
             if ($value->getOutClassName() == $className) {
                 $association = $value;
                 break;
             }
         }
-        return $association ?: false;
+        return $association;
     }
 
     /**
@@ -271,7 +278,7 @@ class Model
         return $methods;
     }
 
-    public function __construct(array $datas)
+    public function __construct(array $datas = [])
     {
         //return self::hydrate($datas);
     }
@@ -303,6 +310,16 @@ class Model
             return true;
         }
         return false;
+    }
+
+    public function __get($key)
+    {
+        if (is_callable($this->$key))
+        {
+            $this->$key = call_user_func($this->$key);
+        }
+
+        return $this->$key;
     }
 
     /**
