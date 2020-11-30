@@ -5,6 +5,7 @@ namespace Entity\Model;
 use Doctrine\Common\Inflector\Inflector;
 use Entity\Database\Dao;
 use Entity\Database\DaoInterface;
+use Entity\Database\LazyLoader;
 use Entity\Database\QueryBuilder\DeleteRequest;
 use Entity\Database\QueryBuilder\InsertRequest;
 use Entity\Database\QueryBuilder\QueryBuilder;
@@ -23,6 +24,7 @@ class ModelManager implements ManagerInterface
     protected DaoInterface $dao;
     protected $classNamespace;
     protected QueryBuilderInterface $builder;
+    protected bool $lazyLoading = true;
 
     /**
      * ModelManager constructor.
@@ -38,6 +40,11 @@ class ModelManager implements ManagerInterface
     public function enableDebug()
     {
         $this->dao->enableDebug();
+    }
+
+    public function disableLazyLoading()
+    {
+        $this->lazyLoading = false;
     }
 
     public function manage(string $class)
@@ -66,8 +73,6 @@ class ModelManager implements ManagerInterface
 
     }
 
-
-
     /**
      * @return QueryBuilderInterface
      */
@@ -79,31 +84,26 @@ class ModelManager implements ManagerInterface
     public function findById($id)
     {
         $request = self::makeFindById($this->classNamespace, $id);
-        $result = $this->dao->execute($request, $this->classNamespace);
-        if ($result) {
-            return $result[0];
-        } else {
-            return false;
-        }
+        $results = $this->dao->execute($request, $this->classNamespace);
+        $model = Model::model($this->classNamespace);
+        $results = $this->processResults($results,$model);
+        return $results[0];
     }
 
     public function findBy(array $params)
     {
         $request = self::makeFindBy($this->classNamespace, $params);
-        return $this->dao->execute($request, $this->classNamespace);
+        $results =  $this->dao->execute($request, $this->classNamespace);
+        $model = Model::model($this->classNamespace);
+        return $this->processResults($results,$model);
     }
 
     public function findAll()
     {
         $request = self::makeSelectAll($this->classNamespace);
-        $return = [];
-        $proxy = new ProxyFactory();
         $results = $this->dao->execute($request, $this->classNamespace);
-        foreach ($results as $result) {
-            //  $return[] = $proxy->createProxy($result);
-            $return[] = $result;
-        }
-        return $return;
+        $model = Model::model($this->classNamespace);
+        return $this->processResults($results, $model);
     }
 
     public function findAssociationValuesBy(string $associationClassname, Model $model)
@@ -124,39 +124,58 @@ class ModelManager implements ManagerInterface
         }
         if ($type == Association::ManyToMany) {
             $junctionTable = $association->getTableName();
-            $request = (new SelectRequest($associationTable . '.*', $junctionTable . '.*'))
-                ->from($associationTable)
-                ->join($junctionTable, $associationTable. '.id', $associationTable . '_id')
-                ->where($table . '_id', '=', $model->getId());
-            $results = $this->dao->execute($request, $associationClassname);
-            return $returns = $results ? $results : [];
+            return $this->findManyToManyToValues($model, $table, $junctionTable, $associationTable, $associationClassname);
         }
         if ($type == Association::OneToMany) {
-            $request = (new SelectRequest($associationTable . '.*'))
-                ->from($associationTable)
-                ->where($table . '_id', ' = ', $model->getId());
-            $results = $this->dao->execute($request, $associationClassname);
-            return $results ? $results : [];
+            return $this->findOneToManyToValues($model, $table, $associationTable);
         }
 
         if (($table && $type == Association::ManyToOne) || ($table && $type == Association::OneToOne)) {
-            $request = (new SelectRequest(
-                $associationTable . '.*',
-                $table . '.id as ' . $table)
-            )
-                ->from($associationTable)
-                ->join($table, $associationTable . 's_id', $associationTable . '.id')
-                ->where($table . '.id', ' = ', $model->getId());
-            $results = $this->dao->execute($request, $associationClassname);
-            return $results ? $results[0] : false;
+            return $this->findManyToOneValues($model, $table, $associationTable, $associationClassname);
         } elseif ($type == Association::OneToOne) {
-            $request = (new SelectRequest( $associationTable . '.*'))
-                ->from($associationTable)
-                ->where($fk, ' = ', $model->getId());
-            $results = $this->dao->execute($request, $associationClassname);
-            return $results ?: false;
+            return $this->findOneToOneValues($model, $associationTable, $associationClassname, $fk);
         }
 
+    }
+
+    private function findManyToManyToValues($model, $table, $junctionTable, $associationTable, $associationClassname)
+    {
+        $request = (new SelectRequest($associationTable . '.*', $junctionTable . '.*'))
+            ->from($associationTable)
+            ->join($junctionTable, $associationTable. '.id', $associationTable . '_id')
+            ->where($table . '_id', '=', $model->getId());
+        $results = $this->dao->execute($request, $associationClassname);
+        return $returns = $results ? $results : [];
+    }
+
+    private function findOneToManyToValues($model, $table, $associationTable)
+    {
+        $request = (new SelectRequest($associationTable . '.*'))
+            ->from($associationTable)
+            ->where($table . '_id', ' = ', $model->getId());
+        $results = $this->dao->execute($request, $associationClassname);
+        return $results ? $results : [];
+    }
+
+    private function findManyToOneValues($model, $table, $associationTable, $associationClassname)
+    {
+        $request = (new SelectRequest(
+            $associationTable . '.*')
+        )
+            ->from($associationTable)
+            ->join($table, $associationTable . '_id', $associationTable . '.id')
+            ->where($table . '.id', ' = ', $model->getId());
+        $results = $this->dao->execute($request, $associationClassname);
+        return $results ? $results[0] : false;
+    }
+
+    private function findOneToOneValues($model, $associationTable, $associationClassname, $fk)
+    {
+        $request = (new SelectRequest( $associationTable . '.*'))
+            ->from($associationTable)
+            ->where($fk, ' = ', $model->getId());
+        $results = $this->dao->execute($request, $associationClassname);
+        return $results ?: false;
     }
 
     public function insert($object)
@@ -247,11 +266,47 @@ class ModelManager implements ManagerInterface
     {
         $columns = $object::getColumns();
         $request = new UpdateRequest($object::getTableName());
-        $columns = array_filter($columns, function ($key) {
+        $fields = array_keys($columns);
+        $associations = $object::getAssociations();
+        foreach ($associations as $association) {
+            $outAssociationName = $association->getOutClassName();
+            if (Model::exists($outAssociationName)) {
+                $table = $outAssociationName::getTableName();
+                $associationType = $association->getType();
+                if ($associationType == Association::OneToOne) {
+                    $fk_name = $table . '_id';
+                    $fields[] = $fk_name;
+                    $columns[$association->getName()] = new DataColumn($association->getName(), "fk");
+                }
+                if ($associationType == Association::ManyToOne) {
+                    $fk_name = $table . '_id';
+                    $fields[] = $fk_name;
+                    $columns[$association->getName()] = new DataColumn($association->getName(), "fk");
+                }
+            }
+        }
+        $fields = array_filter($fields, function ($key) {
             if ($key != 'id') {
                 return $key;
             }
         }, ARRAY_FILTER_USE_KEY);
+        $values = [];
+        foreach ($columns as $column) {
+            $name = $column->getName();
+            $type = $column->getType();
+            if ($name != 'id') {
+                $method = Inflector::camelize('get' . ucfirst($name));
+                if ($type == 'fk') {
+                    $value = $object->$method()->getId();
+                    //if ID == 0 makeInsert and put value to new  id;
+                    $values[Inflector::tableize($name) . 's_id'] = $value;
+                } else {
+                    $value = $object->$method();
+                    $values[$name] = $value;
+                }
+
+            }
+        }
         foreach ($columns as $column) {
             $name = $column->getName();
             $method = 'get' . $name;
@@ -295,5 +350,53 @@ class ModelManager implements ManagerInterface
             return $request;
         }
         throw new \Exception('Try to build request on non existing model : ' . $classNamespace);
+    }
+
+    /**
+     * @param Model $model : proxied object
+     * @param Model $proxy : proxy
+     * @param Association $association : association to lazyload
+     */
+    private function lazyLoad(Model $model, Model &$proxy, Association $association)
+    {
+
+        $method =  'set' .Inflector::classify($association->getName());
+        // set closure with affectation code below
+        $loader = new LazyLoader(
+            $this,
+            'findAssociationValuesBy',
+            [$association->getOutClassName(), $model]
+        );
+        $result = call_user_func_array([$proxy, $method], [$loader]);
+
+    }
+
+    protected function processResults(array $results, Model $model)
+    {
+        if ($this->lazyLoading) {
+            $proxyFactory = new ProxyFactory();
+        }
+        $associations = $model::getAssociations();
+        $returns = [];
+        foreach ($results as $result) {
+            $return = $result;
+            if ($this->lazyLoading) {
+                $return = $proxyFactory->createProxy($result);
+            }
+            foreach ($associations as $association) {
+                $method =  'set' .Inflector::classify($association->getName());
+                if ($this->lazyLoading) {
+                    $this->lazyLoad($result, $return, $association);
+
+                } else {
+                    $associationValues = $this->findAssociationValuesBy($association->getOutClassName(), $result);
+                    if ($associationValues) {
+                        $return->$method($associationValues);
+                    }
+                }
+            }
+            $returns[] = $return;
+        }
+        return $returns;
     }
 }
