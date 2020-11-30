@@ -27,7 +27,8 @@
     "mongodb/mongodb": "^1.6",
     "ext-mongodb": "*",
     "guzzlehttp/psr7": "^1.6",
-    "robmorgan/phinx": "^0.12.1"
+    "robmorgan/phinx": "^0.12.1",
+    "xudid/core": "^0.0.18"
   },
   "require-dev": {
     "symfony/var-dumper": "^5.0",
