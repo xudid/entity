@@ -87,7 +87,11 @@ class ModelManager implements ManagerInterface
         $results = $this->dao->execute($request, $this->classNamespace);
         $model = Model::model($this->classNamespace);
         $results = $this->processResults($results,$model);
-        return $results[0];
+		if (is_array($results)) {
+			return $results[0];
+		} else {
+			return false;
+		}
     }
 
     public function findBy(array $params)
@@ -95,7 +99,11 @@ class ModelManager implements ManagerInterface
         $request = self::makeFindBy($this->classNamespace, $params);
         $results =  $this->dao->execute($request, $this->classNamespace);
         $model = Model::model($this->classNamespace);
-        return $this->processResults($results,$model);
+        if (is_array($results)) {
+			return $this->processResults($results,$model);
+		} else {
+        	return [];
+		}
     }
 
     public function findAll()
@@ -103,7 +111,11 @@ class ModelManager implements ManagerInterface
         $request = self::makeSelectAll($this->classNamespace);
         $results = $this->dao->execute($request, $this->classNamespace);
         $model = Model::model($this->classNamespace);
-        return $this->processResults($results, $model);
+		if (is_array($results)) {
+			return $this->processResults($results,$model);
+		} else {
+			return [];
+		}
     }
 
     public function findAssociationValuesBy(string $associationClassname, Model $model)
@@ -127,7 +139,7 @@ class ModelManager implements ManagerInterface
             return $this->findManyToManyToValues($model, $table, $junctionTable, $associationTable, $associationClassname);
         }
         if ($type == Association::OneToMany) {
-            return $this->findOneToManyToValues($model, $table, $associationTable);
+            return $this->findOneToManyToValues($model, $table, $associationTable, $associationClassname);
         }
 
         if (($table && $type == Association::ManyToOne) || ($table && $type == Association::OneToOne)) {
@@ -148,7 +160,7 @@ class ModelManager implements ManagerInterface
         return $returns = $results ? $results : [];
     }
 
-    private function findOneToManyToValues($model, $table, $associationTable)
+    private function findOneToManyToValues($model, $table, $associationTable, $associationClassname)
     {
         $request = (new SelectRequest($associationTable . '.*'))
             ->from($associationTable)
