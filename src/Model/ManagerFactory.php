@@ -21,8 +21,9 @@ class ManagerFactory
      * @var string
      */
     private string $managerInterfaceName;
+	private string $proxyCachePath;
 
-    /**
+	/**
      * ManagerFactory constructor.
      * @param DataSourceInterface $dataSource
      */
@@ -48,19 +49,31 @@ class ManagerFactory
         }
     }
 
+    public function setProxyCachePath(string $path)
+	{
+		if (is_writable($path)) {
+			$this->proxyCachePath = $path;
+			return $this;
+		}
+		throw new Exception('Invalid $ManagerInterface proxy cache path');
+
+	}
+
     /**
-     * @param string $className
+     * @param string $modelNamespace
      * @return ManagerInterface
      * @throws Exception
      */
-    public function getManager(string $className) : ManagerInterface
+    public function getManager(string $modelNamespace) : ManagerInterface
     {
         try {
             $dao = new Dao($this->dataSource);
             $r = new ReflectionClass($this->managerInterfaceName);
-            return $r->newInstance($dao, $className);
+            $manager =  $r->newInstance($dao, $modelNamespace);
+            $manager->setProxyCachePath($this->proxyCachePath);
+            return $manager;
         } catch (Exception $e) {
-            dump($e);
+            echo '<pre>' . var_dump($e);
         }
 
     }

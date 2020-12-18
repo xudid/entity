@@ -8,6 +8,8 @@ interface ManagerInterface
 {
     public function enableDebug();
 
+    public function setProxyCachePath(string $path): ManagerInterface;
+
     public function builder(): QueryBuilderInterface;
 
     public function findById($id);

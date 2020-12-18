@@ -15,7 +15,7 @@ class ProxyFactoryTest extends TestCase
     public function testCreateDynamicProxyReturnInstanceOfHeritedClass()
     {
         $proxyFactory = new ProxyFactory();
-        $class = $proxyFactory->createProxy(ClassOfTest::class);
+        $class = $proxyFactory->create(ClassOfTest::class);
         $this->assertInstanceOf(ClassOfTest::class, $class);
     }
 }

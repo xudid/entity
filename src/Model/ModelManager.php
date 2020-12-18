@@ -15,6 +15,7 @@ use Entity\Database\QueryBuilder\UpdateRequest;
 use Entity\Metadata\Association;
 use Entity\Metadata\DataColumn;
 use Entity\Metadata\Holder\ProxyFactory;
+use Exception;
 
 class ModelManager implements ManagerInterface
 {
@@ -22,53 +23,76 @@ class ModelManager implements ManagerInterface
      * @var DaoInterface
      */
     protected DaoInterface $dao;
-    protected $classNamespace;
+    protected $modelNamespace;
     protected QueryBuilderInterface $builder;
     protected bool $lazyLoading = true;
+	protected string $proxyCachePath = '';
 
-    /**
-     * ModelManager constructor.
-     * @param DaoInterface $dao
-     */
-    public function __construct(DaoInterface $dao, string $classNamespace)
+	/**
+	 * ModelManager constructor.
+	 * @param DaoInterface $dao
+	 * @param string $modelNamespace
+	 * @throws Exception
+	 */
+    public function __construct(DaoInterface $dao, string $modelNamespace)
     {
         $this->dao = $dao;
-        $this->setClassNamespace($classNamespace);
+        $this->setClassNamespace($modelNamespace);
         $this->builder = new QueryBuilder($this->dao->getDatasource());
-    }
 
-    public function enableDebug()
+	}
+
+	/**
+	 * @param string $path
+	 * @return ManagerInterface
+	 */
+	public function setProxyCachePath(string $path): ManagerInterface
+	{
+		$this->proxyCachePath = $path;
+	}
+
+
+	public function enableDebug()
     {
         $this->dao->enableDebug();
     }
 
-    public function disableLazyLoading()
+	/**
+	 * @return $this
+	 */
+	public function disableLazyLoading():ModelManager
     {
         $this->lazyLoading = false;
+        return $this;
     }
 
-    public function manage(string $class)
-    {
+	/**
+	 * @param string $class
+	 * @return ModelManager
+	 * @throws Exception
+	 */
+	public function manage(string $class): ModelManager
+	{
         if(Model::exists($class)) {
             $dao = new Dao($this->dao->getDatasource());
             return new ModelManager($dao, $class);
         } else {
-            throw new \Exception($class . ' Is not Model can not manage it ');
+            throw new Exception($class . ' Is not Model can not manage it ');
         }
 
     }
 
     /**
-     * @param string $classNamespace
+     * @param string $modelNamespace
      * @return ModelManager
      */
-    public function setClassNamespace(string $classNamespace): ModelManager
+    public function setClassNamespace(string $modelNamespace): ModelManager
     {
-        if(Model::exists($classNamespace)) {
-            $this->classNamespace = $classNamespace;
+        if(Model::exists($modelNamespace)) {
+            $this->modelNamespace = $modelNamespace;
             return $this;
         } else {
-            throw new \Exception($classNamespace . ' Is not Model can not manage it ');
+            throw new Exception($modelNamespace . ' Is not Model can not manage it ');
         }
 
     }
@@ -81,11 +105,16 @@ class ModelManager implements ManagerInterface
         return $this->builder;
     }
 
-    public function findById($id)
+	/**
+	 * @param $id
+	 * @return false|mixed
+	 * @throws Exception
+	 */
+	public function findById($id) 
     {
-        $request = self::makeFindById($this->classNamespace, $id);
-        $results = $this->dao->execute($request, $this->classNamespace);
-        $model = Model::model($this->classNamespace);
+        $request = self::makeFindById($this->modelNamespace, $id);
+        $results = $this->dao->execute($request, $this->modelNamespace);
+        $model = Model::model($this->modelNamespace);
         $results = $this->processResults($results,$model);
 		if (is_array($results)) {
 			return $results[0];
@@ -94,11 +123,16 @@ class ModelManager implements ManagerInterface
 		}
     }
 
-    public function findBy(array $params)
+	/**
+	 * @param array $params
+	 * @return array
+	 * @throws Exception
+	 */
+	public function findBy(array $params)
     {
-        $request = self::makeFindBy($this->classNamespace, $params);
-        $results =  $this->dao->execute($request, $this->classNamespace);
-        $model = Model::model($this->classNamespace);
+        $request = self::makeFindBy($this->modelNamespace, $params);
+        $results =  $this->dao->execute($request, $this->modelNamespace);
+        $model = Model::model($this->modelNamespace);
         if (is_array($results)) {
 			return $this->processResults($results,$model);
 		} else {
@@ -106,19 +140,28 @@ class ModelManager implements ManagerInterface
 		}
     }
 
-    public function findAll()
+	/**
+	 * @return array
+	 * @throws Exception
+	 */
+	public function findAll()
     {
-        $request = self::makeSelectAll($this->classNamespace);
-        $results = $this->dao->execute($request, $this->classNamespace);
-        $model = Model::model($this->classNamespace);
+        $request = self::makeSelectAll($this->modelNamespace);
+        $results = $this->dao->execute($request, $this->modelNamespace);
+        $model = Model::model($this->modelNamespace);
 		if (is_array($results)) {
-			return $this->processResults($results,$model);
+			return $this->processResults($results, $model);
 		} else {
 			return [];
 		}
     }
 
-    public function findAssociationValuesBy(string $associationClassname, Model $model)
+	/**
+	 * @param string $associationClassname
+	 * @param Model $model
+	 * @return array|false|mixed
+	 */
+	public function findAssociationValuesBy(string $associationClassname, Model $model)
     {
         $associationModel = (new $associationClassname([]));
         $associationTable = $associationModel::getTableName();
@@ -150,7 +193,15 @@ class ModelManager implements ManagerInterface
 
     }
 
-    private function findManyToManyToValues($model, $table, $junctionTable, $associationTable, $associationClassname)
+	/**
+	 * @param $model
+	 * @param $table
+	 * @param $junctionTable
+	 * @param $associationTable
+	 * @param $associationClassname
+	 * @return array|mixed
+	 */
+	private function findManyToManyToValues($model, $table, $junctionTable, $associationTable, $associationClassname)
     {
         $request = (new SelectRequest($associationTable . '.*', $junctionTable . '.*'))
             ->from($associationTable)
@@ -160,7 +211,14 @@ class ModelManager implements ManagerInterface
         return $returns = $results ? $results : [];
     }
 
-    private function findOneToManyToValues($model, $table, $associationTable, $associationClassname)
+	/**
+	 * @param $model
+	 * @param $table
+	 * @param $associationTable
+	 * @param $associationClassname
+	 * @return array|mixed
+	 */
+	private function findOneToManyToValues($model, $table, $associationTable, $associationClassname)
     {
         $request = (new SelectRequest($associationTable . '.*'))
             ->from($associationTable)
@@ -169,7 +227,14 @@ class ModelManager implements ManagerInterface
         return $results ? $results : [];
     }
 
-    private function findManyToOneValues($model, $table, $associationTable, $associationClassname)
+	/**
+	 * @param $model
+	 * @param $table
+	 * @param $associationTable
+	 * @param $associationClassname
+	 * @return false|mixed
+	 */
+	private function findManyToOneValues($model, $table, $associationTable, $associationClassname)
     {
         $request = (new SelectRequest(
             $associationTable . '.*')
@@ -181,7 +246,14 @@ class ModelManager implements ManagerInterface
         return $results ? $results[0] : false;
     }
 
-    private function findOneToOneValues($model, $associationTable, $associationClassname, $fk)
+	/**
+	 * @param $model
+	 * @param $associationTable
+	 * @param $associationClassname
+	 * @param $fk
+	 * @return false|mixed
+	 */
+	private function findOneToOneValues($model, $associationTable, $associationClassname, $fk)
     {
         $request = (new SelectRequest( $associationTable . '.*'))
             ->from($associationTable)
@@ -190,36 +262,55 @@ class ModelManager implements ManagerInterface
         return $results ?: false;
     }
 
-    public function insert($object)
+	/**
+	 * @param $object
+	 * @return mixed
+	 */
+	public function insert($object)
     {
         $request = self::makeInsert($object);
-        $id = $this->dao->execute($request, $this->classNamespace);
+        $id = $this->dao->execute($request, $this->modelNamespace);
         if ($id) {
             $object->setId($id);
         }
         return $object;
     }
 
-    public function create($object)
+	/**
+	 * @param $object
+	 * @throws Exception
+	 */
+	public function create($object)
     {
-        throw new \Exception('Unimplemented method yet');
+        throw new Exception('Unimplemented method yet');
         /* $request = self::makeInsert($this->dao->getClassNamespace());
          $this->dao->execute($request);*/
     }
 
-    public function update($object)
+	/**
+	 * @param $object
+	 */
+	public function update($object)
     {
         $request = self::makeUpdate($object);
-        $this->dao->execute($request, $this->classNamespace);
+        $this->dao->execute($request, $this->modelNamespace);
     }
 
-    public function delete($object)
+	/**
+	 * @param $object
+	 */
+	public function delete($object)
     {
         $request = self::makeDelete($object);
-        $this->dao->execute($request, $this->classNamespace);
+        $this->dao->execute($request, $this->modelNamespace);
     }
 
-    protected static function makeInsert(Model $object): InsertRequest
+	/**
+	 * @param Model $object
+	 * @return InsertRequest
+	 * @throws \ReflectionException
+	 */
+	protected static function makeInsert(Model $object): InsertRequest
     {
         $columns = $object::getColumns();
         $associations = $object::getAssociations();
@@ -274,7 +365,12 @@ class ModelManager implements ManagerInterface
         return $request->columns(...$fields)->values($values);
     }
 
-    protected static function makeUpdate(Model $object): UpdateRequest
+	/**
+	 * @param Model $object
+	 * @return UpdateRequest
+	 * @throws \ReflectionException
+	 */
+	protected static function makeUpdate(Model $object): UpdateRequest
     {
         $columns = $object::getColumns();
         $request = new UpdateRequest($object::getTableName());
@@ -328,40 +424,61 @@ class ModelManager implements ManagerInterface
         return $request;
     }
 
-    protected static function makeDelete(Model $object): DeleteRequest
+	/**
+	 * @param Model $object
+	 * @return DeleteRequest
+	 */
+	protected static function makeDelete(Model $object): DeleteRequest
     {
         $request = new DeleteRequest($object::getTableName());
         return $request->where('id', '=', $object->getId());
     }
 
-    protected static function makeSelectAll(string $classNamespace): SelectRequest
+	/**
+	 * @param string $modelNamespace
+	 * @return SelectRequest
+	 * @throws Exception
+	 */
+	protected static function makeSelectAll(string $modelNamespace): SelectRequest
     {
-        if (Model::exists($classNamespace)) {
-            return (new SelectRequest())->from($classNamespace::getTableName());
+        if (Model::exists($modelNamespace)) {
+            return (new SelectRequest())->from($modelNamespace::getTableName());
         }
-        throw new \Exception('Try to build request on non existing model : ' . $classNamespace);
+        throw new Exception('Try to build request on non existing model : ' . $modelNamespace);
     }
 
-    protected static function makeFindById(string $classNamespace, int $id): SelectRequest
+	/**
+	 * @param string $modelNamespace
+	 * @param int $id
+	 * @return SelectRequest
+	 * @throws Exception
+	 */
+	protected static function makeFindById(string $modelNamespace, int $id): SelectRequest
     {
-        if (Model::exists($classNamespace)) {
-            $request = (new SelectRequest())->from($classNamespace::getTableName());
+        if (Model::exists($modelNamespace)) {
+            $request = (new SelectRequest())->from($modelNamespace::getTableName());
             return $request->where('id', '=', $id);
         }
-        throw new \Exception('Try to build request on non existing model : ' . $classNamespace);
+        throw new Exception('Try to build request on non existing model : ' . $modelNamespace);
 
     }
 
-    protected static function makeFindBy(string $classNamespace, array $params): SelectRequest
+	/**
+	 * @param string $modelNamespace
+	 * @param array $params
+	 * @return SelectRequest
+	 * @throws Exception
+	 */
+	protected static function makeFindBy(string $modelNamespace, array $params): SelectRequest
     {
-        if (Model::exists($classNamespace)) {
-            $request = (new SelectRequest())->from($classNamespace::getTableName());
+        if (Model::exists($modelNamespace)) {
+            $request = (new SelectRequest())->from($modelNamespace::getTableName());
             foreach ($params as $name => $value) {
                 $request->where($name, '=', $value);
             }
             return $request;
         }
-        throw new \Exception('Try to build request on non existing model : ' . $classNamespace);
+        throw new Exception('Try to build request on non existing model : ' . $modelNamespace);
     }
 
     /**
@@ -383,17 +500,24 @@ class ModelManager implements ManagerInterface
 
     }
 
-    protected function processResults(array $results, Model $model)
-    {
+	/**
+	 * @param array $results
+	 * @param Model $model
+	 * @return array
+	 * @throws Exception
+	 */
+	protected function processResults(array $results, Model $model): array
+	{
         if ($this->lazyLoading) {
             $proxyFactory = new ProxyFactory();
+            $proxyFactory->setCachePath($this->proxyCachePath);
         }
         $associations = $model::getAssociations();
         $returns = [];
         foreach ($results as $result) {
             $return = $result;
             if ($this->lazyLoading) {
-                $return = $proxyFactory->createProxy($result);
+                $return = $proxyFactory->create($result);
             }
             foreach ($associations as $association) {
                 $method =  'set' .Inflector::classify($association->getName());

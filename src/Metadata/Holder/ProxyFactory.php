@@ -4,37 +4,57 @@
 namespace Entity\Metadata\Holder;
 
 
-use Entity\Database\LazyLoader;
+use Exception;
 use ReflectionObject;
 use ReflectionClass;
 
 class ProxyFactory
 {
-    public function createProxy($object)
+	private string $fileCachePath;
+
+	/**
+	 * @param $object
+	 * @return object
+	 */
+	public function create($object)
     {
-        $objectRelfection = new ReflectionObject($object);
-        $namespace = $objectRelfection->getNamespaceName();
-        $objectShortClassName = $objectRelfection->getShortName();
+        $objectReflection = new ReflectionObject($object);
+        $namespace = $objectReflection->getNamespaceName();
+        $objectShortClassName = $objectReflection->getShortName();
         $shortClassName = $objectShortClassName . 'Proxy';
-        $className = $objectRelfection->getName() . 'Proxy';
+        $className = $objectReflection->getName() . 'Proxy';
         $fileClassName = str_replace('\\', DIRECTORY_SEPARATOR, $className);
-        $fileName = dirname($_SERVER['DOCUMENT_ROOT']) . DIRECTORY_SEPARATOR .  'classes' . DIRECTORY_SEPARATOR . $fileClassName . '.php';
+        $fileName = $this->fileCachePath . DIRECTORY_SEPARATOR . $fileClassName . '.php';
         if (!file_exists($fileName)) {
-            $code = $this->generateProxyCode($namespace,$objectShortClassName, $shortClassName);
-            $this->generateProxyClassFile($code, $fileName);
+            $code = $this->generateCode($namespace,$objectShortClassName, $shortClassName);
+            $this->generateClassFile($code, $fileName);
         }
         require_once $fileName;
         try {
             $proxyRelfection = new ReflectionClass($className);
-            $proxy =  $proxyRelfection->newInstance($object);
-            return $proxy;
-        } catch (\Exception $exception)
+            return $proxyRelfection->newInstance($object);
+        } catch (Exception $exception)
         {
-            dump($exception);
+            echo '<pre>' . var_dump($exception);
         }
     }
 
-    private function generateProxyCode(string $namespace, string $objectShortClassName, string $shortClassName) : string
+	/**
+	 * @param string $path
+	 */
+	public function setCachePath(string $path): ProxyFactory
+	{
+		$this->fileCachePath = $path;
+		return $this;
+	}
+
+	/**
+	 * @param string $namespace
+	 * @param string $objectShortClassName
+	 * @param string $shortClassName
+	 * @return string
+	 */
+	private function generateCode(string $namespace, string $objectShortClassName, string $shortClassName) : string
     {
         $code = "<?php
                 namespace $namespace;
@@ -120,16 +140,24 @@ class ProxyFactory
                     }';
         $code .= '
                }';
-        dump($code);
+        //echo '<pre>' . var_dump($code);
         return $code;
     }
 
-    private function generateProxyClassFile($code, $filename)
+	/**
+	 * @param $code
+	 * @param $filename
+	 */
+	private function generateClassFile($code, $filename)
     {
         $this->file_force_contents($filename ,$code);
     }
 
-    private function file_force_contents($fileFullPath, $contents){
+	/**
+	 * @param $fileFullPath
+	 * @param $contents
+	 */
+	private function file_force_contents($fileFullPath, $contents){
         if (!is_dir(dirname($fileFullPath))) {
             mkdir(dirname($fileFullPath), 0777,true);
         }
