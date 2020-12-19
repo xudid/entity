@@ -49,12 +49,14 @@ class ModelManager implements ManagerInterface
 	public function setProxyCachePath(string $path): ManagerInterface
 	{
 		$this->proxyCachePath = $path;
+		return $this;
 	}
 
 
-	public function enableDebug()
+	public function enableDebug() : ManagerInterface
     {
         $this->dao->enableDebug();
+        return $this;
     }
 
 	/**
