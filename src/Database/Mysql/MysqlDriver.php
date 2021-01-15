@@ -33,7 +33,7 @@ class MysqlDriver extends PDO implements DriverInterface {
 		try {
 			parent::__construct($this->dsn,$this->user,$this->password);
 			foreach ($this->attributes as $name => $value) {
-				$this->setAttribute($name, $$value);
+				$this->setAttribute($name, $value);
 			}
 
 		} catch (PDOException $e) {
