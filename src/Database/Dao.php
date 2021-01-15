@@ -3,8 +3,6 @@
 namespace Entity\Database;
 
 use Entity\Database\QueryBuilder\Request;
-use Entity\DeleteExecuter;
-use Entity\UpdateExecuter;
 use Exception;
 
 

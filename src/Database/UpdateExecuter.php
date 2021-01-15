@@ -1,9 +1,8 @@
 <?php
 
-namespace Entity;
-use Entity\Database\Executer;
+namespace Entity\Database;
 
-class DeleteExecuter extends Executer
+class UpdateExecuter extends Executer
 {
     public function execute()
     {

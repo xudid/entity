@@ -17,27 +17,27 @@ class ProxyFactory
 	 * @return object
 	 */
 	public function create($object)
-    {
-        $objectReflection = new ReflectionObject($object);
-        $namespace = $objectReflection->getNamespaceName();
-        $objectShortClassName = $objectReflection->getShortName();
-        $shortClassName = $objectShortClassName . 'Proxy';
-        $className = $objectReflection->getName() . 'Proxy';
-        $fileClassName = str_replace('\\', DIRECTORY_SEPARATOR, $className);
-        $fileName = $this->fileCachePath . DIRECTORY_SEPARATOR . $fileClassName . '.php';
-        if (!file_exists($fileName)) {
-            $code = $this->generateCode($namespace,$objectShortClassName, $shortClassName);
-            $this->generateClassFile($code, $fileName);
-        }
-        require_once $fileName;
-        try {
-            $proxyRelfection = new ReflectionClass($className);
-            return $proxyRelfection->newInstance($object);
-        } catch (Exception $exception)
-        {
-            echo '<pre>' . var_dump($exception);
-        }
-    }
+	{
+		$objectReflection = new ReflectionObject($object);
+		$namespace = $objectReflection->getNamespaceName();
+		$objectShortClassName = $objectReflection->getShortName();
+		$shortClassName = $objectShortClassName . 'Proxy';
+		$className = $objectReflection->getName() . 'Proxy';
+		$fileClassName = str_replace('\\', DIRECTORY_SEPARATOR, $className);
+		$fileName = $this->fileCachePath . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . $fileClassName . '.php';
+		if (!file_exists($fileName)) {
+			$code = $this->generateCode($namespace,$objectShortClassName, $shortClassName);
+			$this->generateClassFile($code, $fileName);
+		}
+		require_once $fileName;
+		try {
+			$proxyRelfection = new ReflectionClass($className);
+			return $proxyRelfection->newInstance($object);
+		} catch (Exception $exception)
+		{
+			echo '<pre>' . var_dump($exception);
+		}
+	}
 
 	/**
 	 * @param string $path
@@ -55,8 +55,8 @@ class ProxyFactory
 	 * @return string
 	 */
 	private function generateCode(string $namespace, string $objectShortClassName, string $shortClassName) : string
-    {
-        $code = "<?php
+	{
+		$code = "<?php
                 namespace $namespace;
                 
                  use Entity\Database\LazyLoader;
@@ -75,7 +75,7 @@ class ProxyFactory
                             $this->cleanProperties();
                         }
                     }';
-        $code .= 'public function __get($name)
+		$code .= 'public function __get($name)
                     {
                         if (!array_key_exists($name, $this->propertyLoaded)
                             && array_key_exists($name, $this->propertyLoaders)) {
@@ -93,7 +93,7 @@ class ProxyFactory
                         return $this->wrapped->$method();
                     }';
 
-        $code .= 'public function __set($name, $value)
+		$code .= 'public function __set($name, $value)
                     {
                         if ($value instanceof LazyLoader) {
                             $this->propertyLoaders[$name] = $value;
@@ -104,7 +104,7 @@ class ProxyFactory
                             return $this;
                         }
                     }';
-        $code .= 'public function serialize()
+		$code .= 'public function serialize()
                     {
                         foreach ($this->propertyLoaders as $propertyName => $propertyLoader) {
                             $value = $propertyLoader();
@@ -117,14 +117,14 @@ class ProxyFactory
                             "propertyLoaded" => $this->propertyLoaded,
                         ]);
                     }';
-        $code .= 'public function unserialize($serialized)
+		$code .= 'public function unserialize($serialized)
                 {
                     $data = unserialize($serialized);
                     $this->cleanProperties();
                     $this->wrapped = $data["wrapped"];
                     $this->propertyLoaded = $data["propertyLoaded"];
                 }';
-        $code .= 'protected function cleanProperties()
+		$code .= 'protected function cleanProperties()
                     {
                         $selfReflection = new \ReflectionClass(parent::getClass());
                         $selfProperties = $selfReflection->getProperties();
@@ -138,29 +138,29 @@ class ProxyFactory
                             }
                         }
                     }';
-        $code .= '
+		$code .= '
                }';
-        //echo '<pre>' . var_dump($code);
-        return $code;
-    }
+		//echo '<pre>' . var_dump($code);
+		return $code;
+	}
 
 	/**
 	 * @param $code
 	 * @param $filename
 	 */
 	private function generateClassFile($code, $filename)
-    {
-        $this->file_force_contents($filename ,$code);
-    }
+	{
+		$this->file_force_contents($filename ,$code);
+	}
 
 	/**
 	 * @param $fileFullPath
 	 * @param $contents
 	 */
 	private function file_force_contents($fileFullPath, $contents){
-        if (!is_dir(dirname($fileFullPath))) {
-            mkdir(dirname($fileFullPath), 0777,true);
-        }
-        file_put_contents($fileFullPath, $contents);
-    }
+		if (!is_dir(dirname($fileFullPath))) {
+			mkdir(dirname($fileFullPath), 0777,true);
+		}
+		file_put_contents($fileFullPath, $contents);
+	}
 }
