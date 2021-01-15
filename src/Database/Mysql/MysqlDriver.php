@@ -7,7 +7,7 @@ use Entity\Database\DriverInterface;
 use PDO;
 use PDOException;
 
-class MysqlDriver extends PDO implements DriverInterface {
+class MysqlDriver implements DriverInterface {
 	private string $dsn ;
 	private string $server;
 	private string $port;
@@ -15,10 +15,10 @@ class MysqlDriver extends PDO implements DriverInterface {
 	private string $user;
 	private string $password;
 	private string $scheme = 'mysql:host=#HOST#;port=#PORT#;dbname=#DB#';
-    private $attributes = [];
+	private $attributes = [];
 
-    public function __construct(DataSourceInterface $dataSource){
-	    $config = $dataSource->getConfig();
+	public function __construct(DataSourceInterface $dataSource){
+		$config = $dataSource->getConfig();
 		$this->server = $config['mysql.server'];
 		$this->port = $config['mysql.port'];
 		$this->database = $config['mysql.database'];
@@ -26,21 +26,21 @@ class MysqlDriver extends PDO implements DriverInterface {
 		$this->password = $config['mysql.password'];
 		$this->attributes = $config['mysql.attributes'];
 		$this->dsn = str_replace(
-		    ['#HOST#', '#PORT#', '#DB#'],
-            [$this->server, $this->port ? $this->port : 3306, $this->database],
-            $this->scheme
-        );
+			['#HOST#', '#PORT#', '#DB#'],
+			[$this->server, $this->port ? $this->port : 3306, $this->database],
+			$this->scheme
+		);
 
 	}
 
 	public function getConnectionUrl() : string
-    {
-        $url = str_replace(
-            ['#USER#', '#PASSWORD#', '#HOST#', '#DB#'],
-            [$this->user, $this->password, $this->server, $this->database],
-            'mysql://#USER#:#PASSWORD#@#HOST#/#DB#');
-        return $url ;
-    }
+	{
+		$url = str_replace(
+			['#USER#', '#PASSWORD#', '#HOST#', '#DB#'],
+			[$this->user, $this->password, $this->server, $this->database],
+			'mysql://#USER#:#PASSWORD#@#HOST#/#DB#');
+		return $url ;
+	}
 
 	/**
 	 * @return PDO
@@ -50,7 +50,7 @@ class MysqlDriver extends PDO implements DriverInterface {
 		try {
 			$connexion = new PDO($this->dsn,$this->user,$this->password);
 			foreach ($this->attributes as $name => $value) {
-				$this->setAttribute($name, $value);
+				$connexion->setAttribute($name, $value);
 			}
 			return $connexion;
 
@@ -58,5 +58,5 @@ class MysqlDriver extends PDO implements DriverInterface {
 			// todo : return an error message  and log the error
 			echo $e->getMessage();
 		}
-    }
+	}
 }
