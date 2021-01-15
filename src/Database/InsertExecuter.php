@@ -8,7 +8,7 @@ class InsertExecuter extends Executer
     {
         parent::execute();
         if ($this->statmentResult) {
-            return $this->driver->lastInsertId();
+            return $this->connexion->lastInsertId();
         }
             return false;
     }
