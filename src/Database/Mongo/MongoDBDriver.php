@@ -42,7 +42,7 @@ class MongoDBDriver  implements DriverInterface
         return $this->dsn;
     }
 
-    public function getConnection()
+    public function getConnexion()
     {
         // TODO: Implement getConnection() method.
     }

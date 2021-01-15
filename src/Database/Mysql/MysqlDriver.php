@@ -30,16 +30,7 @@ class MysqlDriver extends PDO implements DriverInterface {
             [$this->server, $this->port ? $this->port : 3306, $this->database],
             $this->scheme
         );
-		try {
-			parent::__construct($this->dsn,$this->user,$this->password);
-			foreach ($this->attributes as $name => $value) {
-				$this->setAttribute($name, $value);
-			}
 
-		} catch (PDOException $e) {
-        // todo : return an error message  and log the error
-            echo $e->getMessage();
-		}
 	}
 
 	public function getConnectionUrl() : string
@@ -51,8 +42,21 @@ class MysqlDriver extends PDO implements DriverInterface {
         return $url ;
     }
 
-    public function getConnection()
-    {
-        return $this;
+	/**
+	 * @return PDO
+	 */
+	public function getConnexion(): PDO
+	{
+		try {
+			$connexion = new PDO($this->dsn,$this->user,$this->password);
+			foreach ($this->attributes as $name => $value) {
+				$this->setAttribute($name, $value);
+			}
+			return $connexion;
+
+		} catch (PDOException $e) {
+			// todo : return an error message  and log the error
+			echo $e->getMessage();
+		}
     }
 }

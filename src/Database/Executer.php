@@ -83,7 +83,7 @@ class Executer implements ExecuterInterface {
 
 	public function execute()
 	{
-		$this->connexion = $this->driver->getConnection();
+		$this->connexion = $this->driver->getConnexion();
 		$this->statment = $this->connexion->prepare($this->request->query());
 
 		$bindings=['ok' => [], 'error' => []];
