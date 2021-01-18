@@ -78,7 +78,9 @@ class ModelManager implements ManagerInterface
 	{
 		if(Model::exists($class)) {
 			$dao = new Dao($this->dao->getDatasource());
-			return new ModelManager($dao, $class);
+			$manager = new ModelManager($dao, $class);
+			$manager->setProxyCachePath($this->proxyCachePath);
+			return $manager;
 		} else {
 			throw new Exception($class . ' Is not Model can not manage it ');
 		}
