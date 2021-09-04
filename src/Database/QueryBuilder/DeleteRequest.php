@@ -8,8 +8,7 @@ class DeleteRequest extends Request
 {
 	const TYPE = 'DELETE';
 
-	private static string $requestVerb = 'SELECT';
-	private static string $deletePattern = self::TYPE . '%table% SET';
+	private static string $requestVerb = 'DELETE';
 	private static string $fromVerb = 'FROM';
 	private static string $conditionVerb = 'WHERE';
 	private static string $joinVerb = 'INNER JOIN %table2% ON %idTable1% = %idTable2%';
@@ -21,7 +20,7 @@ class DeleteRequest extends Request
 
 	public function __construct(...$tables)
 	{
-		$this->from($tables);
+		$this->from(...$tables);
 	}
 
 	private function stringyFroms()

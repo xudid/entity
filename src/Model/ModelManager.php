@@ -298,6 +298,7 @@ class ModelManager implements ManagerInterface
 	public function update($object)
 	{
 		$request = self::makeUpdate($object);
+		var_dump($request->query());
 		$this->dao->execute($request, $this->modelNamespace);
 	}
 
@@ -323,16 +324,10 @@ class ModelManager implements ManagerInterface
 		$fields = array_keys($columns);
 		foreach ($associations as $association) {
 			$outAssociationName = $association->getOutClassName();
-
 			if (Model::exists($outAssociationName)) {
 				$table = $outAssociationName::getTableName();
 				$associationType = $association->getType();
-				if ($associationType == Association::OneToOne) {
-					$fk_name = $table . '_id';
-					$fields[] = $fk_name;
-					$columns[$association->getName()] = new DataColumn($association->getName(), "fk");
-				}
-				if ($associationType == Association::ManyToOne) {
+				if ($associationType == Association::OneToOne || $associationType == Association::ManyToOne) {
 					$fk_name = $table . '_id';
 					$fields[] = $fk_name;
 					$columns[$association->getName()] = new DataColumn($association->getName(), "fk");
@@ -403,7 +398,7 @@ class ModelManager implements ManagerInterface
 				return $key;
 			}
 		}, ARRAY_FILTER_USE_KEY);
-		$values = [];
+
 		foreach ($columns as $column) {
 			$name = $column->getName();
 			$type = $column->getType();
@@ -411,19 +406,17 @@ class ModelManager implements ManagerInterface
 				$method = Inflector::camelize('get' . ucfirst($name));
 				if ($type == 'fk') {
 					$value = $object->$method()->getId();
+					$colName = Inflector::tableize($name) . 's_id';
+					if ($object->getId() == 0) {
+						//$request = self::makeInsert($object);
+					}
 					//if ID == 0 makeInsert and put value to new  id;
-					$values[Inflector::tableize($name) . 's_id'] = $value;
 				} else {
 					$value = $object->$method();
-					$values[$name] = $value;
+					$colName = $name;
 				}
-
+				$request->set($colName, $value);
 			}
-		}
-		foreach ($columns as $column) {
-			$name = $column->getName();
-			$method = 'get' . $name;
-			$request->set($name, $object->$method());
 		}
 		$request->where('id', '=', $object->getId());
 		return $request;
@@ -500,6 +493,7 @@ class ModelManager implements ManagerInterface
 			'findAssociationValuesBy',
 			[$association->getOutClassName(), $model]
 		);
+
 		$result = call_user_func_array([$proxy, $method], [$loader]);
 
 	}
@@ -516,28 +510,48 @@ class ModelManager implements ManagerInterface
 			// Todo do not use setters to init proxy but hydrate proxy with an array of loaders
 			$proxyFactory = new ProxyFactory();
 			$proxyFactory->setCachePath($this->proxyCachePath);
+			$loaders = [];
 		}
+
 		$associations = $model::getAssociations();
 		$returns = [];
+
 		foreach ($results as $result) {
-			$return = $result;
 			if ($this->lazyLoading) {
-				$return = $proxyFactory->create($result);
+				$proxyFactory->setWrapped($result);
+			} else {
+				$return = $result;
 			}
 			foreach ($associations as $association) {
-				$method =  'set' .Inflector::classify($association->getName());
 				if ($this->lazyLoading) {
-					$this->lazyLoad($result, $return, $association);
-
+					$proxyFactory->addLoader($association->getName(), $this->getLoader($result, $association));
 				} else {
+					$method =  'set' .Inflector::classify($association->getName());
 					$associationValues = $this->findAssociationValuesBy($association->getOutClassName(), $result);
 					if ($associationValues) {
 						$return->$method($associationValues);
 					}
 				}
 			}
+			if ($this->lazyLoading) {
+				$return = $proxyFactory->create();
+			}
 			$returns[] = $return;
 		}
 		return $returns;
+	}
+
+	public function getLoader(Model $model, Association $association)
+	{
+		return new LazyLoader(
+			$this,
+			'findAssociationValuesBy',
+			[$association->getOutClassName(), $model]
+		);
+	}
+
+	public function getModelNamespace()
+	{
+		return $this->modelNamespace;
 	}
 }

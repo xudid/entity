@@ -3,39 +3,52 @@
 
 namespace Entity\Metadata\Holder;
 
-
+use Entity\Model\Model;
+use Entity\Database\LazyLoader;
 use Exception;
+use Psr\Log\LoggerInterface;
 use ReflectionObject;
 use ReflectionClass;
 
 class ProxyFactory
 {
 	private string $fileCachePath;
+	/**
+	 * @var Model
+	 */
+	private Model $wrapped;
+	private array $loaders = [];
+	/**
+	 * @var LoggerInterface
+	 */
+	private LoggerInterface $logger;
 
 	/**
-	 * @param $object
 	 * @return object
 	 */
-	public function create($object)
+	public function create()
 	{
-		$objectReflection = new ReflectionObject($object);
-		$namespace = $objectReflection->getNamespaceName();
-		$objectShortClassName = $objectReflection->getShortName();
-		$shortClassName = $objectShortClassName . 'Proxy';
-		$className = $objectReflection->getName() . 'Proxy';
+		$wrappedReflection = new ReflectionObject($this->wrapped);
+		$namespace = $wrappedReflection->getNamespaceName();
+		$wrappedShortClassName = $wrappedReflection->getShortName();
+		$shortClassName = $wrappedShortClassName . 'Proxy';
+		$className = $wrappedReflection->getName() . 'Proxy';
 		$fileClassName = str_replace('\\', DIRECTORY_SEPARATOR, $className);
 		$fileName = $this->fileCachePath . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . $fileClassName . '.php';
 		if (!file_exists($fileName)) {
-			$code = $this->generateCode($namespace,$objectShortClassName, $shortClassName);
+			$code = $this->generateCode($namespace,$wrappedShortClassName, $shortClassName);
 			$this->generateClassFile($code, $fileName);
 		}
 		require_once $fileName;
 		try {
 			$proxyRelfection = new ReflectionClass($className);
-			return $proxyRelfection->newInstance($object);
+
+			return $proxyRelfection->newInstance($this->wrapped, $this->loaders);
 		} catch (Exception $exception)
 		{
-			echo '<pre>' . var_dump($exception);
+			if ($this->logger) {
+				$this->logger->debug($exception->getMessage());
+			}
 		}
 	}
 
@@ -48,13 +61,28 @@ class ProxyFactory
 		return $this;
 	}
 
+	public function setWrapped(Model $model)
+	{
+		$this->wrapped = $model;
+	}
+
+	public function addLoader(string $propertyName, LazyLoader $loader)
+	{
+		$this->loaders[$propertyName] = $loader;
+	}
+
+	public function setLogger(LoggerInterface $logger)
+	{
+		$this->logger = $logger;
+	}
+
 	/**
 	 * @param string $namespace
-	 * @param string $objectShortClassName
+	 * @param string $wrappedShortClassName
 	 * @param string $shortClassName
 	 * @return string
 	 */
-	private function generateCode(string $namespace, string $objectShortClassName, string $shortClassName) : string
+	private function generateCode(string $namespace, string $wrappedShortClassName, string $shortClassName) : string
 	{
 		$code = "<?php
                 namespace $namespace;
@@ -62,84 +90,81 @@ class ProxyFactory
                  use Entity\Database\LazyLoader;
                  use Serializable;
                 
-                class $shortClassName extends $objectShortClassName implements Serializable
+                class $shortClassName extends $wrappedShortClassName implements Serializable
                 {" .'
                  
                     private  $wrapped;
                     private $propertyLoaders = [];
                     private $propertyLoaded = [];
-                    public function __construct($object = null)
+                    public function __construct($wrapped = null, array $loaders = [])
                     {
-                        if ($object) {
-                            $this->wrapped = $object;
+                        if ($wrapped) {
+                            $this->wrapped = $wrapped;
+                            $this->propertyLoaders = $loaders;
                             $this->cleanProperties();
                         }
                     }';
 		$code .= 'public function __get($name)
-                    {
-                        if (!array_key_exists($name, $this->propertyLoaded)
-                            && array_key_exists($name, $this->propertyLoaders)) {
-                            $loader = $this->propertyLoaders[$name];
-                            if ($loader) {
-                                $value = $loader();
-                                $setter = "set" . ucfirst($name);
-                                $this->wrapped->$setter($value);
-                                $this->propertyLoaded[$name] = true;
-                                $method = "get".ucfirst($name);
-                                return $this->wrapped->$method();
-                            }
-                        }
-                        $method = "get".ucfirst($name);
-                        return $this->wrapped->$method();
-                    }';
+                 {
+                     if (!array_key_exists($name, $this->propertyLoaded)
+                         && array_key_exists($name, $this->propertyLoaders)) {
+                         $loader = $this->propertyLoaders[$name];
+                         if ($loader) {
+                             $value = $loader();
+                             $setter = "set" . ucfirst($name);
+                             $this->wrapped->$setter($value);
+                             $this->propertyLoaded[$name] = true;
+                             $method = "get".ucfirst($name);
+                             return $this->wrapped->$method();
+                         }
+                     }
+                     $method = "get".ucfirst($name);
+                     return $this->wrapped->$method();
+                 }';
 
 		$code .= 'public function __set($name, $value)
-                    {
-                        if ($value instanceof LazyLoader) {
-                            $this->propertyLoaders[$name] = $value;
-                            return $this;
-                        } else {
-                            $setter = "set" . ucfirst($name);
-                            $this->wrapped->$setter($value);
-                            return $this;
-                        }
-                    }';
+                  {
+                      $setter = "set" . ucfirst($name);
+                      $this->wrapped->$setter($value);
+                      return $this;
+                        
+                  }';
 		$code .= 'public function serialize()
-                    {
-                        foreach ($this->propertyLoaders as $propertyName => $propertyLoader) {
-                            $value = $propertyLoader();
-                            $setter = "set" . ucfirst($propertyName);
-                            $this->wrapped->$setter($value);
-                            $this->propertyLoaded[$propertyName] = true;
-                        }
-                        return serialize([
-                            "wrapped" => $this->wrapped,
-                            "propertyLoaded" => $this->propertyLoaded,
-                        ]);
-                    }';
+                 {
+                     foreach ($this->propertyLoaders as $propertyName => $propertyLoader) {
+                         $value = $propertyLoader();
+                         $setter = "set" . ucfirst($propertyName);
+                         $this->wrapped->$setter($value);
+                         $this->propertyLoaded[$propertyName] = true;
+                     }
+                     return serialize([
+                          "wrapped" => $this->wrapped,
+                          "propertyLoaded" => $this->propertyLoaded,
+                     ]);
+                 }';
 		$code .= 'public function unserialize($serialized)
-                {
-                    $data = unserialize($serialized);
-                    $this->cleanProperties();
-                    $this->wrapped = $data["wrapped"];
-                    $this->propertyLoaded = $data["propertyLoaded"];
-                }';
+                 {
+                     $data = unserialize($serialized);
+                     $this->cleanProperties();
+                     $this->wrapped = $data["wrapped"];
+                     $this->propertyLoaded = $data["propertyLoaded"];
+                 }';
 		$code .= 'protected function cleanProperties()
-                    {
-                        $selfReflection = new \ReflectionClass(parent::getClass());
-                        $selfProperties = $selfReflection->getProperties();
-                        foreach ($selfProperties as $selfProperty) {
-                            $propertyName = $selfProperty->getName();
-                            if ($selfProperty->isPrivate()) {
-                                throw new \Exception("Proxied object must have protected properties because proxy inherits of his class");
-                            }
-                            if ($propertyName != "wrapped") {
-                                unset($this->$propertyName);
-                            }
-                        }
-                    }';
+                 {
+                     $selfReflection = new \ReflectionClass(parent::getClass());
+                     $selfProperties = $selfReflection->getProperties();
+                     foreach ($selfProperties as $selfProperty) {
+                         $propertyName = $selfProperty->getName();
+                 	     if ($selfProperty->isPrivate()) {
+                             throw new \Exception("Proxied object must have protected properties because proxy inherits of his class");
+                         }
+                         if ($propertyName != "wrapped") {
+                             unset($this->$propertyName);
+                         }
+                     }
+                 }';
 		$code .= '
-               }';
+             }';
 		//echo '<pre>' . var_dump($code);
 		return $code;
 	}
