@@ -28,7 +28,7 @@
     "ext-mongodb": "*",
     "guzzlehttp/psr7": "^1.6",
     "robmorgan/phinx": "^0.12.1",
-    "xudid/core": "^0.0.18",
+    "xudid/core": "dev-master",
     "psr/log": "^1.1"
   },
   "require-dev": {
