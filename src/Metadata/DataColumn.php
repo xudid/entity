@@ -3,11 +3,13 @@
 
 namespace Entity\Metadata;
 
+
+
 /**
  * Class DataColumn
  * @package Entity\Metadata
  */
-class DataColumn
+class DataColumn implements DataColumnInterface
 {
     /**
      * @var string

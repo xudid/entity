@@ -4,6 +4,7 @@
 namespace Entity;
 
 
+use Core\Contracts\ModelInterface;
 use Entity\Model\Model;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -24,7 +25,7 @@ class SearchBinder
     public function bind(string $class): array
     {
         $bindedParams = [];
-        if (class_exists($class) && is_subclass_of($class, Model::class)) {
+        if (class_exists($class) && is_subclass_of($class, ModelInterface::class)) {
             $this->model = new $class();
             foreach ($this->model::getColumns() as $column) {
                 $paramKey = $column->getName();

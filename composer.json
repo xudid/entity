@@ -1,7 +1,7 @@
 {
   "name": "xudid/entity",
   "description": "persistence and request layer",
-  "minimum-stability": "stable",
+  "minimum-stability": "dev",
   "license": "MIT",
   "authors": [
     {
@@ -21,18 +21,9 @@
     }
   },
   "require": {
-    "doctrine/dbal": "^2.10",
-    "doctrine/orm": "^2.7",
     "ext-pdo": "*",
-    "mongodb/mongodb": "^1.6",
-    "ext-mongodb": "*",
-    "guzzlehttp/psr7": "^1.6",
-    "robmorgan/phinx": "^0.12.1",
     "xudid/core": "dev-master",
-    "psr/log": "^1.1"
-  },
-  "require-dev": {
-    "symfony/var-dumper": "^5.0",
-    "phpunit/phpunit": "^8.0"
+    "psr/log": "^1.1",
+    "doctrine/inflector": "^2.0"
   }
 }

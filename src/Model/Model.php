@@ -2,7 +2,8 @@
 
 namespace Entity\Model;
 
-use Doctrine\Common\Inflector\Inflector;
+use Core\Contracts\ModelInterface;
+use Doctrine\Inflector\Inflector;
 use Entity\Database\Attributes\Column;
 use Entity\Database\Attributes\Id;
 use Entity\Database\Attributes\OneToMany;
@@ -21,7 +22,7 @@ use TypeError;
  * Class Model
  * @package Entity\Model
  */
-class Model
+class Model implements ModelInterface, ModelInterface
 {
 	//use Hydratation;
 

@@ -2,7 +2,7 @@
 
 namespace Entity\Model;
 
-use Doctrine\Common\Inflector\Inflector;
+use Doctrine\Inflector\Inflector;
 use Entity\Database\Dao;
 use Entity\Database\DaoInterface;
 use Entity\Database\LazyLoader;
@@ -16,7 +16,6 @@ use Entity\Metadata\Association;
 use Entity\Metadata\DataColumn;
 use Entity\Metadata\Holder\ProxyFactory;
 use Exception;
-use function Debug\Tools\dump;
 
 class ModelManager implements ManagerInterface
 {
