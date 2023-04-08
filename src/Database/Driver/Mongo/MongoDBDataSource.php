@@ -1,14 +1,17 @@
 <?php
 
 
-namespace Entity\Database\Mongo;
+namespace Xudid\Entity\Database\Driver\Mongo;
 
 
-use Entity\Database\DataSource;
-use Entity\Database\DriverInterface;
+
+use Xudid\Entity\Database\Driver\DataSource;
+use Xudid\EntityContracts\Database\Driver\DriverInterface;
 
 class MongoDBDataSource extends DataSource
 {
+
+    private DriverInterface $driver;
 
     public function __construct(string $name, array $config)
     {
