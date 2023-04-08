@@ -1,7 +1,7 @@
 {
   "name": "xudid/entity",
   "description": "persistence and request layer",
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "license": "MIT",
   "authors": [
     {
@@ -11,19 +11,17 @@
   ],
   "autoload": {
     "psr-4": {
-      "Entity\\": "src/"
-    }
-  },
-
-  "autoload-dev": {
-    "psr-4": {
-      "Usage\\": "usage/src/"
+      "Xudid\\Entity\\": "src/"
     }
   },
   "require": {
     "ext-pdo": "*",
-    "xudid/core": "dev-master",
     "psr/log": "^1.1",
-    "doctrine/inflector": "^2.0"
+    "xudid/querybuilder": ">=0.0.0.1",
+    "doctrine/inflector": "^2.0",
+    "xudid/entitycontracts": ">=0.0.0.1"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.0"
   }
 }
