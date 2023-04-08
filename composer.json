@@ -15,7 +15,6 @@
     }
   },
   "require": {
-    "ext-pdo": "*",
     "psr/log": "^1.1",
     "xudid/querybuilder": ">=0.0.0.1",
     "doctrine/inflector": "^2.0",
