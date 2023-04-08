@@ -1,6 +1,6 @@
 <?php
 
-namespace Entity\Database\Attributes;
+namespace Xudid\Entity\Attributes;
 
 use Attribute;
 
@@ -14,13 +14,8 @@ class Table
 		$this->name = $name;
 	}
 
-	/**
-	 * @return string
-	 */
 	public function getName(): string
 	{
 		return $this->name;
 	}
-	
-	
 }

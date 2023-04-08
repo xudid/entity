@@ -1,15 +1,9 @@
 <?php
 
-
-namespace Entity\Model;
-
+namespace Xudid\Entity\Model\Proxy;
 
 class Autoloader
 {
-
-	/**
-	 * @param string $cachePath
-	 */
 	public static function register(string $cachePath)
 	{
 		spl_autoload_register(function ($class) use($cachePath) {

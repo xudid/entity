@@ -1,18 +1,14 @@
 <?php
 
+namespace Xudid\Entity\Database\Driver\Mysql;
 
-namespace Entity\Database\Mysql;
-
-
-use Entity\Database\DataSource;
-use Entity\Database\DriverInterface;
+use Xudid\Entity\Database\Driver\DataSource;
+use Xudid\EntityContracts\Database\Driver\DriverInterface;
 
 class MysqlDataSource extends DataSource
 {
+    private MysqlDriver $driver;
 
-    /**
-     * MysqlDataSource constructor.
-     */
     public function __construct(string $name, array $config)
     {
         parent::__construct($name,$config);

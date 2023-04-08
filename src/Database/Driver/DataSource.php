@@ -1,26 +1,20 @@
 <?php
 
+namespace Xudid\Entity\Database\Driver;
 
-namespace Entity\Database;
-
-
+use Xudid\EntityContracts\Database\Driver\DataSourceInterface;
+use Xudid\EntityContracts\Database\Driver\DriverInterface;
 
 abstract class DataSource implements DataSourceInterface
 {
     private  string $name = "";
     private array $config = [];
 
-    /**
-     * DataSource constructor.
-     * @param string $name
-     * @param array $config
-     */
     public function __construct(string $name, array $config)
     {
         $this->name = $name;
         $this->config = $config;
     }
-
 
     public function getName(): string
     {
@@ -32,8 +26,5 @@ abstract class DataSource implements DataSourceInterface
         return $this->config;
     }
 
-    /**
-     * @return mixed
-     */
     public abstract function getDriver() : DriverInterface;
 }

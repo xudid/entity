@@ -1,36 +1,30 @@
 <?php
 
-namespace Entity\Database;
+namespace Xudid\Entity\Request\Executer;
 
-use Entity\Database\QueryBuilder\Request;
 use Exception;
-
+use Xudid\EntityContracts\Database\Driver\DaoInterface;
+use Xudid\EntityContracts\Database\Driver\DataSourceInterface;
+use Xudid\EntityContracts\Database\Driver\DriverInterface;
+use Xudid\EntityContracts\Executer\ExecuterInterface;
+use Xudid\QueryBuilderContracts\Request\DeleteInterface;
+use Xudid\QueryBuilderContracts\Request\InsertInterface;
+use Xudid\QueryBuilderContracts\Request\RequestInterface;
+use Xudid\QueryBuilderContracts\Request\SelectInterface;
+use Xudid\QueryBuilderContracts\Request\UpdateInterface;
 
 /**
  * Class Dao
- * @package Entity\Database
  */
 class Dao implements DaoInterface
 {
-    /**
-     * @var DriverInterface|mixed
-     */
     private DriverInterface $driver;
-
-    /**
-     * @var DataSourceInterface $dataSource
-     */
     private DataSourceInterface $dataSource;
-
-    /**
-     * @var bool $debug
-     */
     private bool $debug = false;
 
 
     /**
      * Dao constructor.
-     * @param DataSourceInterface $dataSource
      */
     function __construct(DataSourceInterface $dataSource)
     {
@@ -38,66 +32,54 @@ class Dao implements DaoInterface
         $this->driver = $dataSource->getDriver();
     }
 
-    public function getDatasource()
+    public function getDatasource(): DataSourceInterface
     {
         return $this->dataSource;
     }
 
-    public function getDriver()
+    public function getDriver(): DriverInterface
     {
         return $this->driver;
     }
 
-    public function enableDebug()
+    public function debug(): static
     {
         $this->debug = true;
-    }
-
-    public function beginTransation()
-    {
-        $this->driver->beginTransaction();
         return $this;
     }
 
-
-    /**
-     * @param Request $request
-     * @param string $className
-     * @return mixed
-     */
-    public function execute(Request $request, string $className = '')
+    public function execute(RequestInterface $request, string $className = '')
     {
         try {
             $executer = $this->getExecuter($request, $className);
             if ($this->debug) {
-                $executer->enableDebug();
+                $executer->debug();
             }
             return $executer->execute();
         } catch (Exception $exception) {
-            dump($exception);
         }
         return false;
     }
 
-    private function getExecuter(Request $request, string $associationClassName) : ExecuterInterface
+    private function getExecuter(RequestInterface $request, string $associationClassName) : ExecuterInterface
     {
-        switch ($request::TYPE) {
-            case 'INSERT':
+        switch (get_class($request)) {
+            case InsertInterface::class:
                 $executer = (new InsertExecuter($this->driver))
                     ->className($associationClassName)
                     ->request($request);
                 break;
-            case 'SELECT':
+            case SelectInterface::class:
                 $executer = (new SelectExecuter($this->driver))
                     ->className($associationClassName)
                     ->request($request);
                 break;
-            case 'UPDATE':
+            case UpdateInterface::class:
                 $executer = (new UpdateExecuter($this->driver))
                     ->className($associationClassName)
                     ->request($request);
                 break;
-            case 'DELETE':
+            case DeleteInterface::class:
                 $executer = (new DeleteExecuter($this->driver))
                     ->className($associationClassName)
                     ->request($request);
@@ -106,7 +88,7 @@ class Dao implements DaoInterface
                 throw new Exception("Unimplemented SQL request type");
         }
         if ($this->debug) {
-            $executer->enableDebug();
+            $executer->debug();
         }
         return $executer;
     }

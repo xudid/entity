@@ -2,12 +2,11 @@
 
 namespace Database;
 
-use Entity\Database\LazyLoader;
 use PHPUnit\Framework\TestCase;
+use Xudid\Entity\Model\LazyLoader;
 
 class LazyLoaderTest extends TestCase
 {
-
     public function testConstruct()
     {
         $object = new class {

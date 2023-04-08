@@ -1,85 +1,96 @@
 <?php
 
+namespace Xudid\Entity\Metadata;
 
-namespace Entity\Metadata;
+use Xudid\EntityContracts\Metadata\DataColumnInterface;
 
-
-
-/**
- * Class DataColumn
- * @package Entity\Metadata
- */
 class DataColumn implements DataColumnInterface
 {
-    /**
-     * @var string
-     */
     private string $name;
-    /**
-     * @var string
-     */
     private string $type;
-    /**
-     * @var bool
-     */
     private bool $isPrimary = false;
-    /**
-     * @var bool
-     */
     private bool $isAutoIncrement = false;
-
     /**
-     * DataColumn constructor.
-     * @param string $name
-     * @param string $type
+     * @var true
      */
+    private bool $isUnique = false;
+    /**
+     * @var true
+     */
+    private bool $IsNull = false;
+    /**
+     * @var null
+     */
+    private $default = null;
+
     public function __construct(string $name, string $type)
     {
         $this->name = $name;
         $this->type = $type;
     }
 
-    /**
-     * @return string
-     */
     public function getName(): string
     {
         return $this->name;
     }
 
-    /**
-     * @return string
-     */
     public function getType(): string
     {
         return $this->type;
     }
 
-    public function setIsPrimary()
+    public function setIsPrimary(): static
     {
         $this->isPrimary = true;
         return $this;
     }
 
-    public function setIsAutoIncrement()
+    public function setIsAutoIncrement(): static
     {
         $this->isAutoIncrement = true;
         return $this;
     }
 
-    /**
-     * @return bool
-     */
     public function isPrimary(): bool
     {
         return $this->isPrimary;
     }
 
-    /**
-     * @return bool
-     */
     public function isAutoIncrement(): bool
     {
         return $this->isAutoIncrement;
+    }
+
+    public function unique(): static
+    {
+        $this->isUnique = true;
+        return $this;
+    }
+
+    public function isUnique(): bool
+    {
+        return $this->isUnique;
+    }
+
+    public function null(): static
+    {
+        $this->IsNull = true;
+        return $this;
+    }
+
+    public function isNull(): bool
+    {
+        return $this->IsNull;
+    }
+
+    public function default(): static
+    {
+        $this->default = null;
+        return $this;
+    }
+
+    public function getDefault(): mixed
+    {
+        return $this->default;
     }
 }

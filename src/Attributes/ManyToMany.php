@@ -1,12 +1,11 @@
 <?php
 
-
-namespace Entity\Database\Attributes;
+namespace Xudid\Entity\Attributes;
 
 use Attribute;
 
 #[Attribute]
-class OneToMany
+class ManyToMany
 {
 	private string $outClassname = '';
 	public function __construct(string $outClassname)
@@ -14,10 +13,7 @@ class OneToMany
 		$this->outClassname = $outClassname;
 	}
 
-	/**
-	 * @return string
-	 */
-	public function getOutClassname(): string
+	public function getToModel(): string
 	{
 		return $this->outClassname;
 	}

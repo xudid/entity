@@ -1,10 +1,9 @@
 <?php
 
-namespace Entity\Metadata;;
+namespace Xudid\Entity\Metadata;;
 
 /**
  * Class Association
- * @package Entity\Metadata
  */
 class Association
 {
@@ -22,13 +21,11 @@ class Association
 
     protected string $name;
     protected string $type;
-    protected string $holdingClassName;
-    protected string $outClassName;
+    protected string $fromModel;
+    protected string $toModel;
 
     /**
      * Association constructor.
-     * @param string $name
-     * @param string $type
      */
     public function __construct(string $name, string $type)
     {
@@ -36,58 +33,35 @@ class Association
         $this->type = $type;
     }
 
-    /**
-     * @param mixed $holdingClassName
-     * @return Association
-     */
-    public function setHoldingClassName(string $holdingClassName)
+    public function setFromModel(string $fromModel): static
     {
-        $this->holdingClassName = $holdingClassName;
+        $this->fromModel = $fromModel;
         return $this;
     }
 
-    /**
-     * @param mixed $outClassName
-     * @return Association
-     */
-    public function setOutClassName(string $outClassName)
+    public function setToModel(string $toModel): static
     {
-        $this->outClassName = $outClassName;
+        $this->toModel = $toModel;
         return $this;
-
     }
 
-    /**
-     * @return string
-     */
-    public function getHoldingClassName(): string
+    public function getFromModel(): string
     {
-        return $this->holdingClassName;
+        return $this->fromModel;
     }
 
-    /**
-     * @return string
-     */
-    public function getOutClassName(): string
+    public function getToModel(): string
     {
-        return $this->outClassName;
+        return $this->toModel;
     }
 
-    /**
-     * @return string
-     */
     public function getName(): string
     {
         return $this->name;
     }
 
-    /**
-     * @return string
-     */
     public function getType(): string
     {
         return $this->type;
     }
-
-
 }

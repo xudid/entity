@@ -1,15 +1,8 @@
 <?php
 
-namespace Entity\Migrations;
+namespace Xudid\Entity\Migrations;
 
-use Entity\Database\DaoInterface;
-use Phinx\Config\Config;
-use Phinx\Console\PhinxApplication;
-use Symfony\Component\Console\Exception\ExceptionInterface;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\Console\Output\NullOutput;
-use Symfony\Component\Console\Output\OutputInterface;
+use Xudid\EntityContracts\Database\Driver\DaoInterface;
 
 class PhinxAdapter
 {
@@ -136,9 +129,7 @@ class PhinxAdapter
 		try {
 			return $this->command->run(new ArrayInput([]), $this->outputBuffer);
 		} catch (ExceptionInterface $e) {
-			dump($e,$this->outputBuffer);
 		} catch (\Exception $e) {
-			dump($e);
 		}
 	}
 }

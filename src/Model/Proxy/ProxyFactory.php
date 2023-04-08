@@ -1,10 +1,10 @@
 <?php
 
 
-namespace Entity\Metadata\Holder;
+namespace Xudid\Entity\Model\Proxy;
 
-use Entity\Model\Model;
-use Entity\Database\LazyLoader;
+use Xudid\Entity\Model\LazyLoader;
+use Xudid\Entity\Model\Model;
 use Exception;
 use Psr\Log\LoggerInterface;
 use ReflectionObject;

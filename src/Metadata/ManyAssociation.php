@@ -1,30 +1,38 @@
 <?php
 
-
-namespace Entity\Metadata;
-
+namespace Xudid\Entity\Metadata;
 
 class ManyAssociation extends Association
 {
-    private string $tableName;
+    private string $table;
+    private string $fromForeignKey;
+    private string $toForeignKey;
 
-    /**
-     * ManyAssociation constructor.
-     */
     public function __construct(string $name, string $type)
     {
         parent::__construct($name, $type);
     }
 
-
-    public function getTableName()
+    public function getTable()
     {
-        return $this->tableName;
+        return $this->table;
     }
 
-    public function setTableName(string $tableName)
+    public function setTable(string $table): static
     {
-        $this->tableName = $tableName;
+        $this->table = $table;
+        return $this;
+    }
+
+    public function setFromForeignKey(string $foreignKey): static
+    {
+        $this->fromForeignKey = $foreignKey;
+        return $this;
+    }
+    
+    public function setToForeignKey(string $foreignKey): static
+    {
+        $this->toForeignKey = $foreignKey;
         return $this;
     }
 }

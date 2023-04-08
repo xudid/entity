@@ -1,6 +1,6 @@
 <?php
 
-namespace Entity\Database;
+namespace Xudid\Entity\Request\Executer;
 
 class InsertExecuter extends Executer
 {

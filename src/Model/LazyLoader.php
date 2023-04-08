@@ -1,8 +1,6 @@
 <?php
 
-
-namespace Entity\Database;
-
+namespace Xudid\Entity\Model;
 
 class LazyLoader
 {
@@ -14,7 +12,6 @@ class LazyLoader
      * LazyLoader constructor.
      * @param $loader
      * @param $function
-     * @param array $args
      */
     public function __construct($loader, $function, array $args)
     {
@@ -28,6 +25,4 @@ class LazyLoader
         $function  = $this->function;
         return call_user_func_array([$this->loader, $function],$this->args);
     }
-
-
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Entity\Database\Attributes;
+namespace Xudid\Entity\Attributes;
 
 use Attribute;
 
@@ -13,15 +13,8 @@ class Column
 		$this->type = $type;
 	}
 
-	/**
-	 * @return string
-	 */
 	public function getType(): string
 	{
 		return $this->type;
 	}
-	
-	
-	
-	
 }

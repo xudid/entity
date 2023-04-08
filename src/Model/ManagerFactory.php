@@ -1,33 +1,26 @@
 <?php
 
-namespace Entity\Model;
+namespace Xudid\Entity\Model;
 
-use Entity\Database\Dao;
-use Entity\Database\DataSourceInterface;
 use Exception;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
+use Xudid\Entity\Request\Executer\Dao;
+use Xudid\EntityContracts\Database\Driver\DataSourceInterface;
+use Xudid\EntityContracts\Model\ManagerInterface;
 
 /**
  * Class ManagerFactory
- * @package Entity\Model
  */
 class ManagerFactory
 {
-	/**
-	 * @var DataSourceInterface
-	 */
 	private DataSourceInterface $dataSource;
-	/**
-	 * @var string
-	 */
 	private string $managerInterfaceName;
 	private string $proxyCachePath;
 	private ?LoggerInterface $logger;
 
 	/**
 	 * ManagerFactory constructor.
-	 * @param DataSourceInterface $dataSource
 	 */
 	public function __construct(DataSourceInterface $dataSource)
 	{
@@ -36,11 +29,9 @@ class ManagerFactory
 	}
 
 	/**
-	 * @param string $managerInterfaceName
-	 * @return ManagerFactory
 	 * @throws Exception
 	 */
-	public function setManagerInterface(string $managerInterfaceName)
+	public function setManagerInterface(string $managerInterfaceName): static
 	{
 		if (class_exists($managerInterfaceName)) {
 			$this->managerInterfaceName = $managerInterfaceName;
@@ -53,9 +44,13 @@ class ManagerFactory
 				throw new Exception($message);
 			}
 		}
+        return $this;
 	}
 
-	public function setProxyCachePath(string $path)
+    /**
+     * @throws Exception
+     */
+    public function setProxyCachePath(string $path): static
 	{
 		if (is_writable($path)) {
 			$this->proxyCachePath = $path;
@@ -67,11 +62,10 @@ class ManagerFactory
 		} else {
 			throw new Exception($message);
 		}
+        return $this;
 	}
 
 	/**
-	 * @param string $modelNamespace
-	 * @return ManagerInterface
 	 * @throws Exception
 	 */
 	public function getManager(string $modelNamespace): ManagerInterface
@@ -85,10 +79,9 @@ class ManagerFactory
 		} catch (Exception $exception) {
 			if ($this->logger) {
 				$this->logger->debug($exception->getMessage() . ' failed to build new ModelManager instance');
-			} else {
-				throw new Exception('failed to build new ModelManager instance');
 			}
 		}
+        throw new Exception('failed to build new ModelManager instance');
 	}
 
 	public function setLogger(LoggerInterface $logger)

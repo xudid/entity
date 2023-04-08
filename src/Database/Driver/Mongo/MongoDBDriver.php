@@ -1,11 +1,11 @@
 <?php
 
 
-namespace Entity\Database\Mongo;
+namespace Xudid\Entity\Database\Driver\Mongo;
 
 use MongoDB\Driver\Manager;
-use Entity\Database\DataSourceInterface;
-use Entity\Database\DriverInterface;
+use Xudid\EntityContracts\Database\Driver\DataSourceInterface;
+use Xudid\EntityContracts\Database\Driver\DriverInterface;
 
 class MongoDBDriver  implements DriverInterface
 {

@@ -1,11 +1,11 @@
 <?php
 
-namespace Entity\Database\Mysql;
+namespace Xudid\Entity\Database\Driver\Mysql;
 
-use Entity\Database\DataSourceInterface;
-use Entity\Database\DriverInterface;
 use PDO;
 use PDOException;
+use Xudid\EntityContracts\Database\Driver\DataSourceInterface;
+use Xudid\EntityContracts\Database\Driver\DriverInterface;
 
 class MysqlDriver implements DriverInterface {
 	private string $dsn ;
@@ -42,10 +42,7 @@ class MysqlDriver implements DriverInterface {
 		return $url ;
 	}
 
-	/**
-	 * @return PDO
-	 */
-	public function getConnexion(): PDO
+	public function getConnexion(): ?PDO
 	{
 		try {
 			$connexion = new PDO($this->dsn,$this->user,$this->password);
@@ -58,5 +55,6 @@ class MysqlDriver implements DriverInterface {
 			// todo : return an error message  and log the error
 			echo $e->getMessage();
 		}
+        return null;
 	}
 }

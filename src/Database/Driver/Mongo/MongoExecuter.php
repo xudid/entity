@@ -1,10 +1,9 @@
 <?php
 
 
-namespace Entity\Database\Mongo;
+namespace Xudid\Entity\Database\Driver\Mongo;
 
-
-use Entity\Database\DataSourceInterface;
+use Xudid\EntityContracts\Database\Driver\DataSourceInterface;
 
 class MongoExecuter
 {
@@ -19,6 +18,9 @@ class MongoExecuter
     public function execute($request)
     {
         $manager = $this->driver->getConnection();
+        $dbname = '';
+        $c_users = '';
+        $read = '';
         $cursor = $manager->executeQuery("$dbname.$c_users", $read);
         return  json_encode($cursor->toArray());
     }

@@ -1,9 +1,7 @@
 <?php
 
-
-use Entity\Metadata\Holder\ProxyFactory;
 use PHPUnit\Framework\TestCase;
-
+use Xudid\Entity\Model\Proxy\ProxyFactory;
 
 class ClassOfTest
 {
@@ -11,7 +9,6 @@ class ClassOfTest
 }
 class ProxyFactoryTest extends TestCase
 {
-
     public function testCreateDynamicProxyReturnInstanceOfHeritedClass()
     {
         $proxyFactory = new ProxyFactory();

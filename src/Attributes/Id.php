@@ -1,7 +1,6 @@
 <?php
 
-
-namespace Entity\Database\Attributes;
+namespace Xudid\Entity\Attributes;
 
 use Attribute;
 
@@ -14,4 +13,9 @@ class Id
 	{
 		$this->autoIncrement = $autoIncrement;
 	}
+
+    public function isAutoIncrement()
+    {
+        return $this->autoIncrement;
+    }
 }
