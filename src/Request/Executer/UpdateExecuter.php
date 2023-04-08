@@ -1,8 +1,8 @@
 <?php
 
-namespace Entity\Database;
+namespace Xudid\Entity\Request\Executer;
 
-class DeleteExecuter extends Executer
+class UpdateExecuter extends Executer
 {
     public function execute()
     {
