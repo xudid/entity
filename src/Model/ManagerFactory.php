@@ -6,7 +6,7 @@ use Exception;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use Xudid\Entity\Request\Executer\Dao;
-use Xudid\EntityContracts\Database\Driver\DataSourceInterface;
+use Xudid\EntityContracts\Database\Driver\DriverInterface;
 use Xudid\EntityContracts\Model\ManagerInterface;
 
 /**
@@ -14,7 +14,7 @@ use Xudid\EntityContracts\Model\ManagerInterface;
  */
 class ManagerFactory
 {
-	private DataSourceInterface $dataSource;
+	private DriverInterface $driver;
 	private string $managerInterfaceName;
 	private string $proxyCachePath;
 	private ?LoggerInterface $logger;
@@ -22,9 +22,9 @@ class ManagerFactory
 	/**
 	 * ManagerFactory constructor.
 	 */
-	public function __construct(DataSourceInterface $dataSource)
+	public function __construct(DriverInterface $driver)
 	{
-		$this->dataSource = $dataSource;
+		$this->driver = $driver;
 		$this->managerInterfaceName = ModelManager::class;
 	}
 
@@ -71,9 +71,8 @@ class ManagerFactory
 	public function getManager(string $modelNamespace): ManagerInterface
 	{
 		try {
-			$dao = new Dao($this->dataSource);
 			$r = new ReflectionClass($this->managerInterfaceName);
-			$manager = $r->newInstance($dao, $modelNamespace);
+			$manager = $r->newInstance($this->driver, $modelNamespace);
 			$manager->setProxyCachePath($this->proxyCachePath);
 			return $manager;
 		} catch (Exception $exception) {

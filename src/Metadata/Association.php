@@ -1,11 +1,15 @@
 <?php
 
-namespace Xudid\Entity\Metadata;;
+namespace Xudid\Entity\Metadata;
+
+use Xudid\EntityContracts\Metadata\AssociationInterface;
+
+;
 
 /**
  * Class Association
  */
-class Association
+class Association implements AssociationInterface
 {
     const ManyToMany = 'ManyToMany';
     const ManyToOne = 'ManyToOne';
@@ -23,6 +27,7 @@ class Association
     protected string $type;
     protected string $fromModel;
     protected string $toModel;
+    protected string $table;
 
     /**
      * Association constructor.
@@ -63,5 +68,16 @@ class Association
     public function getType(): string
     {
         return $this->type;
+    }
+
+    public function getTable(): string
+    {
+        return '';
+    }
+
+    public function setTable(string $table): static
+    {
+        $this->table = $table;
+        return $this;
     }
 }

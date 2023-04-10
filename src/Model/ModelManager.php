@@ -82,7 +82,10 @@ class ModelManager implements ManagerInterface
     public function findById($id): ModelInterface
     {
         $request = self::makeFindById($this->modelNamespace, $id);
-        $results = $this->executer->execute($request, $this->modelNamespace);
+        $results = $this->executer
+            ->request($request)
+            ->className($this->modelNamespace);
+
         $model = Model::model($this->modelNamespace);
         $results = $this->processResults($results, $model);
         if (is_array($results)) {
@@ -415,7 +418,6 @@ class ModelManager implements ManagerInterface
             // use Illusion class to generate ProxyClasses
             $proxyFactory = new ProxyFactory();
             $proxyFactory->setCachePath($this->proxyCachePath);
-            $loaders = [];
         }
 
         $associations = $model::getAssociations();
@@ -429,7 +431,8 @@ class ModelManager implements ManagerInterface
             }
             foreach ($associations as $association) {
                 if ($this->lazyLoading) {
-                    $proxyFactory->addLoader($association->getName(), $this->getLoader($result, $association));
+                    $loader = $this->getLoader($result, $association);
+                    $proxyFactory->addLoader($association, $loader);
                 } else {
                     $method = 'set' . static::inflector()->classify($association->getName());
                     $associationValues = $this->findAssociationValues($association->getOutClassName(), $result);

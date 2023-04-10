@@ -22,7 +22,7 @@ class Model implements ModelInterface
     #[Id(true)]
     protected int $id = 0;
 
-    public static function model(string $model): ModelInterface
+    public static function model(string $model): static
     {
         if (self::exists($model)) {
             return new $model();
@@ -163,7 +163,7 @@ class Model implements ModelInterface
                 $association->setFromModel(static::class);
                 $association->setToModel($outClassname);
 
-                $outModel = self::model($outClassname);
+                $outModel = Model::model($outClassname);
                 $association->setTable(self::getTable() . '_' . $outModel::getTable());
                 $fromForeignKey = self::getTable() . '_id';
                 $toForeignKey = $outModel::getTable() . '_id';

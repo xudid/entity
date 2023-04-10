@@ -5,6 +5,7 @@ namespace Xudid\Entity\Model\Proxy;
 
 use Xudid\Entity\Model\LazyLoader;
 use Xudid\Entity\Model\Model;
+use Xudid\EntityContracts\Metadata\AssociationInterface;
 use Exception;
 use Psr\Log\LoggerInterface;
 use ReflectionObject;
@@ -13,34 +14,26 @@ use ReflectionClass;
 class ProxyFactory
 {
 	private string $fileCachePath;
-	/**
-	 * @var Model
-	 */
 	private Model $wrapped;
 	private array $loaders = [];
-	/**
-	 * @var LoggerInterface
-	 */
 	private LoggerInterface $logger;
 
-	/**
-	 * @return object
-	 */
-	public function create()
+	public function create(): object
 	{
-		$wrappedReflection = new ReflectionObject($this->wrapped);
-		$namespace = $wrappedReflection->getNamespaceName();
-		$wrappedShortClassName = $wrappedReflection->getShortName();
-		$shortClassName = $wrappedShortClassName . 'Proxy';
-		$className = $wrappedReflection->getName() . 'Proxy';
-		$fileClassName = str_replace('\\', DIRECTORY_SEPARATOR, $className);
-		$fileName = $this->fileCachePath . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . $fileClassName . '.php';
-		if (!file_exists($fileName)) {
-			$code = $this->generateCode($namespace,$wrappedShortClassName, $shortClassName);
-			$this->generateClassFile($code, $fileName);
-		}
-		require_once $fileName;
-		try {
+        try {
+            $wrappedReflection = new ReflectionObject($this->wrapped);
+            $namespace = $wrappedReflection->getNamespaceName();
+            $wrappedShortClassName = $wrappedReflection->getShortName();
+            $shortClassName = $wrappedShortClassName . 'Proxy';
+            $className = $wrappedReflection->getName() . 'Proxy';
+            $fileClassName = str_replace('\\', DIRECTORY_SEPARATOR, $className);
+            $fileName = $this->fileCachePath . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . $fileClassName . '.php';
+            if (!file_exists($fileName)) {
+                $code = $this->generateCode($namespace,$wrappedShortClassName, $shortClassName);
+                $this->generateClassFile($code, $fileName);
+            }
+		    require_once $fileName;
+
 			$proxyRelfection = new ReflectionClass($className);
 
 			return $proxyRelfection->newInstance($this->wrapped, $this->loaders);
@@ -50,11 +43,9 @@ class ProxyFactory
 				$this->logger->debug($exception->getMessage());
 			}
 		}
+        throw new Exception('Failed to generate proxy class for : ' . $className);
 	}
 
-	/**
-	 * @param string $path
-	 */
 	public function setCachePath(string $path): ProxyFactory
 	{
 		$this->fileCachePath = $path;
@@ -66,22 +57,18 @@ class ProxyFactory
 		$this->wrapped = $model;
 	}
 
-	public function addLoader(string $propertyName, LazyLoader $loader)
+	public function addLoader(AssociationInterface $association, LazyLoader $loader)
 	{
+        $propertyName = $association->getName();
 		$this->loaders[$propertyName] = $loader;
 	}
 
 	public function setLogger(LoggerInterface $logger)
 	{
 		$this->logger = $logger;
+        return $this;
 	}
 
-	/**
-	 * @param string $namespace
-	 * @param string $wrappedShortClassName
-	 * @param string $shortClassName
-	 * @return string
-	 */
 	private function generateCode(string $namespace, string $wrappedShortClassName, string $shortClassName) : string
 	{
 		$code = "<?php
@@ -165,24 +152,15 @@ class ProxyFactory
                  }';
 		$code .= '
              }';
-		//echo '<pre>' . var_dump($code);
 		return $code;
 	}
 
-	/**
-	 * @param $code
-	 * @param $filename
-	 */
-	private function generateClassFile($code, $filename)
+	private function generateClassFile(string $code, string $filename)
 	{
 		$this->file_force_contents($filename ,$code);
 	}
 
-	/**
-	 * @param $fileFullPath
-	 * @param $contents
-	 */
-	private function file_force_contents($fileFullPath, $contents){
+	private function file_force_contents(string $fileFullPath, string $contents){
 		if (!is_dir(dirname($fileFullPath))) {
 			mkdir(dirname($fileFullPath), 0777,true);
 		}

@@ -4,7 +4,6 @@ namespace Xudid\Entity\Metadata;
 
 class ManyAssociation extends Association
 {
-    private string $table;
     private string $fromForeignKey;
     private string $toForeignKey;
 
@@ -13,7 +12,7 @@ class ManyAssociation extends Association
         parent::__construct($name, $type);
     }
 
-    public function getTable()
+    public function getTable(): string
     {
         return $this->table;
     }
