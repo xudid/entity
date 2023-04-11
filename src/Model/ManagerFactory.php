@@ -5,9 +5,10 @@ namespace Xudid\Entity\Model;
 use Exception;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
-use Xudid\Entity\Request\Executer\Dao;
+use Xudid\Entity\Request\Executer\Executer;
 use Xudid\EntityContracts\Database\Driver\DriverInterface;
 use Xudid\EntityContracts\Model\ManagerInterface;
+use Xudid\QueryBuilder\QueryBuilder;
 
 /**
  * Class ManagerFactory
@@ -16,8 +17,9 @@ class ManagerFactory
 {
 	private DriverInterface $driver;
 	private string $managerInterfaceName;
-	private string $proxyCachePath;
+	private string $proxyCachePath = '';
 	private ?LoggerInterface $logger;
+    protected $lazyLoad = false;
 
 	/**
 	 * ManagerFactory constructor.
@@ -65,6 +67,12 @@ class ManagerFactory
         return $this;
 	}
 
+    public function withLazyLoad(): static
+    {
+        $this->lazyLoad = true;
+        return $this;
+    }
+
 	/**
 	 * @throws Exception
 	 */
@@ -72,8 +80,13 @@ class ManagerFactory
 	{
 		try {
 			$r = new ReflectionClass($this->managerInterfaceName);
-			$manager = $r->newInstance($this->driver, $modelNamespace);
+            $builder = new QueryBuilder();
+            $executer = new Executer($this->driver);
+            $manager = $r->newInstance($modelNamespace, $builder, $executer,);
 			$manager->setProxyCachePath($this->proxyCachePath);
+            if (!$this->lazyLoad) {
+                $manager->disableLazyLoading();
+            }
 			return $manager;
 		} catch (Exception $exception) {
 			if ($this->logger) {

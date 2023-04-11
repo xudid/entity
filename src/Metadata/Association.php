@@ -4,8 +4,6 @@ namespace Xudid\Entity\Metadata;
 
 use Xudid\EntityContracts\Metadata\AssociationInterface;
 
-;
-
 /**
  * Class Association
  */

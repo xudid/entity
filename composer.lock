@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3f2ab59d22feeee585f7df5f4582939c",
+    "content-hash": "1fe4849ab0d049911686baba6488c5cd",
     "packages": [
         {
             "name": "doctrine/inflector",
@@ -149,16 +149,16 @@
         },
         {
             "name": "xudid/entitycontracts",
-            "version": "0.0.0.1",
+            "version": "0.0.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/xudid/entitycontracts.git",
-                "reference": "f997e546b763e3eeda713f6ebbfb7fa1ce283b67"
+                "reference": "cb29d18e1a79e847169efaf9bfc8b3e9649ae79b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/xudid/entitycontracts/zipball/f997e546b763e3eeda713f6ebbfb7fa1ce283b67",
-                "reference": "f997e546b763e3eeda713f6ebbfb7fa1ce283b67",
+                "url": "https://api.github.com/repos/xudid/entitycontracts/zipball/cb29d18e1a79e847169efaf9bfc8b3e9649ae79b",
+                "reference": "cb29d18e1a79e847169efaf9bfc8b3e9649ae79b",
                 "shasum": ""
             },
             "require": {
@@ -186,9 +186,9 @@
             "description": "contracts for entity package",
             "support": {
                 "issues": "https://github.com/xudid/entitycontracts/issues",
-                "source": "https://github.com/xudid/entitycontracts/tree/0.0.0.1"
+                "source": "https://github.com/xudid/entitycontracts/tree/0.0.0.2"
             },
-            "time": "2023-04-07T22:08:36+00:00"
+            "time": "2023-04-11T11:18:10+00:00"
         },
         {
             "name": "xudid/querybuilder",
@@ -1884,9 +1884,7 @@
     "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": {
-        "ext-pdo": "*"
-    },
+    "platform": [],
     "platform-dev": [],
     "plugin-api-version": "2.3.0"
 }

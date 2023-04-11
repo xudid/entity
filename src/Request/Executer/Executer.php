@@ -2,11 +2,12 @@
 
 namespace Xudid\Entity\Request\Executer;
 
+use App\DB\MysqlPDODriver;
 use Doctrine\Inflector\Inflector;
 use PDO;
 use \PDOStatement;
 use Xudid\EntityContracts\Database\Driver\DriverInterface;
-use Xudid\EntityContracts\Executer\ExecuterInterface;
+use Xudid\EntityContracts\Request\ExecuterInterface;
 use Xudid\QueryBuilderContracts\Request\RequestInterface;
 
 /**
@@ -51,18 +52,20 @@ class Executer implements ExecuterInterface
 
     public function execute()
     {
-        $bindResult = $this->driver->bind($this->request);
-
-        $bindings = ['ok' => [], 'error' => []];
-        foreach ($this->request->getBindings() as $field => $value) {
-            $binded = $this->statment->bindValue(Inflector::tableize($field), $value);
-            if ($this->debug && !$binded) {
-                $bindings['error'][$field] = false;
-            } else {
-                $bindings['ok'][$field] = $value;
+        try {
+            if ($this->className) {
+                $this->driver
+                    ->setFetchMode(DriverInterface::FETCH_CLASS)
+                    ->withClassName($this->className);
             }
+            $bindResult = $this->driver->bind($this->request);
+            $this->debugData['bind_result'] = $bindResult;
+            return $this->driver->fetchAll();
+        } catch (Exception $ex) {
+            $this->debugData['exception'] = $ex->getMessage();
         }
 
+/*
         if ($this->debug) {
             $this->statment->debugDumpParams();
         }
@@ -76,13 +79,12 @@ class Executer implements ExecuterInterface
                     'error code' => $this->statment->errorCode(),
                     'error info 1' => $this->statment->errorInfo()[0],
                     'error info 2' => $this->statment->errorInfo()[1],
-                    'bindings' => $bindings,
                     //'uniq_id' => $this->id,
                 ];
             }
         } catch (\PDOException $ex) {
             $this->debugData['exception'] = $ex->getMessage() . __FILE__;
-        }
+        }*/
     }
 
     public function executeSql(string $sql)

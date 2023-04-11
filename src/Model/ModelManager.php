@@ -6,7 +6,7 @@ use Doctrine\Inflector\{Inflector, InflectorFactory, Language};
 use Xudid\Entity\Metadata\{Association, DataColumn};
 use Exception;
 use Xudid\Entity\Model\Proxy\ProxyFactory;
-use Xudid\EntityContracts\Executer\ExecuterInterface;
+use Xudid\EntityContracts\Request\ExecuterInterface;
 use Xudid\EntityContracts\Model\{ManagerInterface, ModelInterface};
 use Xudid\QueryBuilder\Request\{Delete, Insert, Select, Update};
 use Xudid\QueryBuilderContracts\QueryBuilderInterface;
@@ -84,11 +84,12 @@ class ModelManager implements ManagerInterface
         $request = self::makeFindById($this->modelNamespace, $id);
         $results = $this->executer
             ->request($request)
-            ->className($this->modelNamespace);
+            ->className($this->modelNamespace)
+            ->execute();
 
         $model = Model::model($this->modelNamespace);
         $results = $this->processResults($results, $model);
-        if (is_array($results)) {
+        if (is_array($results) && !empty($results)) {
             return $results[0];
         } else {
             return $model;
@@ -101,7 +102,10 @@ class ModelManager implements ManagerInterface
     public function findBy(array $params): array
     {
         $request = self::makeFindBy($this->modelNamespace, $params);
-        $results = $this->executer->execute($request, $this->modelNamespace);
+        $results = $this->executer
+            ->request($request)
+            ->className($this->modelNamespace)
+            ->execute();
         $model = Model::model($this->modelNamespace);
         if (is_array($results)) {
             return $this->processResults($results, $model);
@@ -116,7 +120,10 @@ class ModelManager implements ManagerInterface
     public function findAll(): array
     {
         $request = self::makeSelectAll($this->modelNamespace);
-        $results = $this->executer->execute($request, $this->modelNamespace);
+        $results = $this->executer
+            ->request($request)
+            ->className($this->modelNamespace)
+            ->execute();
         $model = Model::model($this->modelNamespace);
         if (is_array($results)) {
             return $this->processResults($results, $model);
@@ -222,7 +229,10 @@ class ModelManager implements ManagerInterface
     public function create(ModelInterface $object): mixed
     {
         $request = self::makeInsert($object);
-        $id = $this->executer->execute($request, $this->modelNamespace);
+        $id = $this->executer
+            ->request($request)
+            ->className($this->modelNamespace)
+            ->execute();
         if ($id) {
             $object->setId($id);
         }
@@ -232,13 +242,18 @@ class ModelManager implements ManagerInterface
     public function update(ModelInterface $object)
     {
         $request = self::makeUpdate($object);
-        $this->executer->execute($request, $this->modelNamespace);
+        $this->executer
+            ->request($request)
+            ->className($this->modelNamespace)
+            ->execute();
     }
 
     public function delete(ModelInterface $object)
     {
         $request = self::makeDelete($object);
-        $this->executer->execute($request, $this->modelNamespace);
+        $this->executer->request($request)
+            ->className($this->modelNamespace)
+            ->execute();
     }
 
     /**
