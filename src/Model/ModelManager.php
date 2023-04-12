@@ -428,6 +428,9 @@ class ModelManager implements ManagerInterface
      */
     protected function processResults(array $results, ModelInterface $model): array
     {
+        if (empty($results)) {
+            return [];
+        }
         if ($this->lazyLoading) {
             // Todo do not use setters to init proxy but hydrate proxy with an array of loaders
             // use Illusion class to generate ProxyClasses

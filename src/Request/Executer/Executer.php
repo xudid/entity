@@ -2,13 +2,14 @@
 
 namespace Xudid\Entity\Request\Executer;
 
-use App\DB\MysqlPDODriver;
-use Doctrine\Inflector\Inflector;
-use PDO;
-use \PDOStatement;
+use Exception;
 use Xudid\EntityContracts\Database\Driver\DriverInterface;
 use Xudid\EntityContracts\Request\ExecuterInterface;
 use Xudid\QueryBuilderContracts\Request\RequestInterface;
+use Xudid\QueryBuilderContracts\Request\InsertInterface;
+use Xudid\QueryBuilderContracts\Request\UpdateInterface;
+use Xudid\QueryBuilderContracts\Request\SelectInterface;
+use Xudid\QueryBuilderContracts\Request\DeleteInterface;
 
 /**
  * Class Executer
@@ -16,13 +17,10 @@ use Xudid\QueryBuilderContracts\Request\RequestInterface;
 class Executer implements ExecuterInterface
 {
     protected DriverInterface $driver;
-    protected string $className;
-    protected PDOStatement $statment;
+    protected string $className = '';
     protected RequestInterface $request;
     protected bool $debug = false;
-    protected $statmentResult = false;
-    protected $connexion;
-    private array $debugData = [];
+    protected array $debugData = [];
 
     /**
      * InsertExecuter constructor.
@@ -53,52 +51,53 @@ class Executer implements ExecuterInterface
     public function execute()
     {
         try {
+            if (!$this->request) {
+                throw new Exception('No request to execute');
+            }
+
             if ($this->className) {
                 $this->driver
                     ->setFetchMode(DriverInterface::FETCH_CLASS)
                     ->withClassName($this->className);
             }
+
             $bindResult = $this->driver->bind($this->request);
             $this->debugData['bind_result'] = $bindResult;
-            return $this->driver->fetchAll();
+
+            $result = $this->driver->fetchAll();
+            return $this->processRequestResult($this->request, $result);
         } catch (Exception $ex) {
             $this->debugData['exception'] = $ex->getMessage();
         }
-
-/*
-        if ($this->debug) {
-            $this->statment->debugDumpParams();
-        }
-        try {
-            $this->statmentResult = $this->statment->execute();
-            if ($this->debug) {
-                $this->statment->debugDumpParams();
-                $this->debugData = [
-                    'result' => $this->statmentResult,
-                    'row count' => $this->statment->rowCount(),
-                    'error code' => $this->statment->errorCode(),
-                    'error info 1' => $this->statment->errorInfo()[0],
-                    'error info 2' => $this->statment->errorInfo()[1],
-                    //'uniq_id' => $this->id,
-                ];
-            }
-        } catch (\PDOException $ex) {
-            $this->debugData['exception'] = $ex->getMessage() . __FILE__;
-        }*/
     }
 
     public function executeSql(string $sql)
     {
-        $statement = $this->connexion->query($sql);
-        if (!$statement) {
-
+        try {
+            $result = $this->driver->query($sql);
+            return $result;
+        } catch (\DriverException $e) {
         }
-
-        return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function debugData(): array
     {
         return $this->debugData;
+    }
+
+    private function processRequestResult($request, $result)
+    {
+        if ($request instanceof InsertInterface) {
+            return $this->driver->lastInsertId();
+        }
+
+        if (
+            $request instanceof DeleteInterface
+            ||$request instanceof UpdateInterface
+            ||$request instanceof SelectInterface
+        ) {
+            return $result;
+        }
+        throw new Exception("Unimplemented SQL request type");
     }
 }
