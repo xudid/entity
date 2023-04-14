@@ -2,11 +2,14 @@
 
 namespace Xudid\Entity\Model;
 
+use Core\Security\Password;
 use Doctrine\{Inflector\Inflector, Inflector\InflectorFactory, Inflector\Language};
 use Xudid\Entity\Attributes\{Column, Id, ManyToMany, ManyToOne, OneToMany, Table};
 use Xudid\Entity\Metadata\{Association, DataColumn, ManyAssociation};
 use Xudid\EntityContracts\{Metadata\AssociationInterface, Metadata\DataColumnInterface, Model\ModelInterface};
 use Exception;
+use Psr\Http\Message\ServerRequestInterface;
+use Core\Http\Request as HttpRequest;
 use ReflectionClass;
 use ReflectionException;
 use TypeError;
@@ -288,6 +291,27 @@ class Model implements ModelInterface
             return true;
         }
         return false;
+    }
+
+    public function handle(ServerRequestInterface $request, $prefix = '')
+    {
+        $prefix = strlen($prefix) > 0 ? $prefix : static::getTable();
+        $fields = static::getColumns();
+        foreach ($fields as $field) {
+            $baseFieldName = $field->getName();
+            $fieldName = $prefix . '_' . $baseFieldName;
+            if (HttpRequest::has($request, $fieldName)) {
+                $value = HttpRequest::get($request, $fieldName);
+                if ($field->getType() == 'password' && $value) {
+                    $value = Password::hash($value);
+                }
+                $method = 'set' . ucfirst($baseFieldName);
+                if(static::hasSetter($method)) {
+                    $value = htmlentities($value, ENT_QUOTES, 'UTF-8');
+                   call_user_func([$this, $method], $value);
+                }
+            }
+        }
     }
 
     public function __get($key)
