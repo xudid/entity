@@ -148,6 +148,6 @@ class MysqlPDODriver implements DriverInterface
 
     public function lastInsertId(): mixed
     {
-        return $this->currentStatment->lastInsertId();
+        return $this->pdo->lastInsertId();
     }
 }

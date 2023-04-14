@@ -19,7 +19,9 @@
     "xudid/querybuilder": ">=0.0.0.1",
     "doctrine/inflector": "^2.0",
     "xudid/entitycontracts": "0.0.0.2",
-    "xudid/querybuildercontracts": "0.0.0.3"
+    "xudid/querybuildercontracts": "0.0.0.3",
+    "psr/http-message": "^2.0",
+    "xudid/core": ">=0.0.18"
   },
   "require-dev": {
     "phpunit/phpunit": "^10.0"

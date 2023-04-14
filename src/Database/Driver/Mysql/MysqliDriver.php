@@ -2,9 +2,7 @@
 
 namespace Xudid\Entity\Database\Driver\Mysql;
 
-
 use mysqli;
-use mysqli_result;
 use mysqli_stmt;
 use Xudid\EntityContracts\Database\Driver\DriverInterface;
 use Xudid\EntityContracts\Database\Driver\DriverException;
