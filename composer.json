@@ -18,7 +18,7 @@
     "psr/log": "^1.1",
     "xudid/querybuilder": ">=0.0.0.1",
     "doctrine/inflector": "^2.0",
-    "xudid/entitycontracts": "0.0.0.2",
+    "xudid/entitycontracts": ">=0.0.0.2",
     "xudid/querybuildercontracts": "0.0.0.3",
     "psr/http-message": "^1.0|^2.0",
     "xudid/core": "^0.0.24"

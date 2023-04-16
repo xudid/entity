@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6d662e25715e6cf00bac8bf1607f3423",
+    "content-hash": "e8998746bb861bd4f44217a8e69eade4",
     "packages": [
         {
             "name": "doctrine/inflector",
@@ -1065,16 +1065,16 @@
         },
         {
             "name": "xudid/entitycontracts",
-            "version": "0.0.0.2",
+            "version": "0.0.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/xudid/entitycontracts.git",
-                "reference": "cb29d18e1a79e847169efaf9bfc8b3e9649ae79b"
+                "reference": "15970e43f412e46c9b18f1a1d1aed7ae099e82ba"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/xudid/entitycontracts/zipball/cb29d18e1a79e847169efaf9bfc8b3e9649ae79b",
-                "reference": "cb29d18e1a79e847169efaf9bfc8b3e9649ae79b",
+                "url": "https://api.github.com/repos/xudid/entitycontracts/zipball/15970e43f412e46c9b18f1a1d1aed7ae099e82ba",
+                "reference": "15970e43f412e46c9b18f1a1d1aed7ae099e82ba",
                 "shasum": ""
             },
             "require": {
@@ -1102,9 +1102,9 @@
             "description": "contracts for entity package",
             "support": {
                 "issues": "https://github.com/xudid/entitycontracts/issues",
-                "source": "https://github.com/xudid/entitycontracts/tree/0.0.0.2"
+                "source": "https://github.com/xudid/entitycontracts/tree/0.0.0.3"
             },
-            "time": "2023-04-11T11:18:10+00:00"
+            "time": "2023-04-12T14:54:10+00:00"
         },
         {
             "name": "xudid/querybuilder",
