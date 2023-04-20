@@ -65,7 +65,7 @@ class MysqliDriver implements DriverInterface
             $this->fetchResult = $this->currentStatment->get_result();
         }
 
-        if ($this->fetchMode == self::FETCH_CLASS) {
+        if ($this->fetchMode == DriverInterface::FETCH_CLASS) {
             $return = $this->fetchResult->fetch_object($this->className);
         } else {
             $return = $this->fetchResult->fetch_assoc();
@@ -81,7 +81,7 @@ class MysqliDriver implements DriverInterface
     public function fetchAll(): array
     {
         $this->currentStatment->execute();
-        if ($this->fetchMode == self::FETCH_CLASS) {
+        if ($this->fetchMode == DriverInterface::FETCH_CLASS) {
             $queryResult = $this->currentStatment->get_result();
             $results = [];
             while ($result = $queryResult->fetch_object($this->className)) {
@@ -98,8 +98,20 @@ class MysqliDriver implements DriverInterface
         $this->currentStatment->execute();
     }
 
-    public function lastInsertId()
+    public function lastInsertId():mixed
     {
         return $this->mysqli->insert_id;
+    }
+
+    public function setFetchMode(int $fetchMode): static
+    {
+       $this->fetchMode = $fetchMode;
+       return $this;
+    }
+
+    public function withClassName(string $className): static
+    {
+        $this->className = $className;
+        return $this;
     }
 }

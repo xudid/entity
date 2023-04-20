@@ -129,15 +129,16 @@ class MysqlPDODriver implements DriverInterface
             if ($result === false) {
                 throw new DriverException();
             }
-            $fetchOptions = array_filter([
-                $this->fetchMode,
-                ($this->fetchMode == self::FETCH_CLASS && $this->className)
-                ? $this->className
-                : ''
-            ]);
-            return $this->currentStatment->fetchAll(...$fetchOptions);
+
+            if ($this->fetchMode == DriverInterface::FETCH_CLASS) {
+                $fetchMode = self::FETCH_CLASS;
+            } else {
+                $fetchMode = self::FETCH_ASSOC;
+            }
+
+            return $this->currentStatment->fetchAll($fetchMode, $this->className);
         } catch (Exception $exception) {
-            throw new DriverException();
+            throw new DriverException($exception->getMessage());
         }
     }
 

@@ -33,6 +33,7 @@ class Executer implements ExecuterInterface
     public function className(string $className): static
     {
         $this->className = $className;
+        $this->driver->withClassName($className);
         return $this;
     }
 
